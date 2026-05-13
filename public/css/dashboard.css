@@ -1,0 +1,377 @@
+:root {
+    color-scheme: light;
+}
+
+.dashboard-shell {
+    min-height: 100vh;
+    display: flex;
+    background: #f7efe6;
+    color: #37261b;
+}
+
+.dashboard-sidebar {
+    width: 280px;
+    background: linear-gradient(180deg, #7c4c2e 0%, #5d4331 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 45px rgba(49, 33, 24, 0.22);
+}
+
+.dashboard-sidebar-inner {
+    padding: 2rem;
+}
+
+.dashboard-brand {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+}
+
+.dashboard-nav {
+    display: grid;
+    gap: 1rem;
+}
+
+.dashboard-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1rem;
+    color: #f7efe6;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dashboard-nav-link:hover,
+.dashboard-nav-link.active {
+    background: rgba(247, 239, 230, 0.22);
+    color: #ffffff;
+}
+
+.dashboard-main {
+    flex: 1;
+    padding: 2rem 2rem 2rem 2rem;
+}
+
+.dashboard-container {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.5rem;
+}
+
+.dashboard-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+}
+
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.dashboard-description {
+    margin-top: 0.5rem;
+    max-width: 44rem;
+    color: #5d4331;
+}
+
+/* Shared dashboard and alarm page styles */
+/*
+    This stylesheet is used by both the dashboard and alarm views.
+    Keep shared layout, sidebar, and content styling together here.
+*/
+.dashboard-stats-grid {
+    display: grid;
+    gap: 1rem;
+    width: 100%;
+    align-items: stretch;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-card,
+.dashboard-panel,
+.dashboard-chart-card,
+.dashboard-score-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #d9c3b5;
+    border-radius: 1.75rem;
+    box-shadow: 0 18px 40px rgba(74, 46, 11, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.dashboard-card:hover,
+.dashboard-panel:hover,
+.dashboard-score-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 45px rgba(74, 46, 11, 0.12);
+}
+
+.dashboard-card {
+    padding: 1.5rem;
+}
+
+.dashboard-section {
+    border-radius: 2rem;
+    padding: 1.5rem;
+}
+
+.dashboard-section.bg-soft {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.dashboard-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #d9c3b5;
+}
+
+.dashboard-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.dashboard-section-subtitle {
+    color: #7c5a44;
+}
+
+.dashboard-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.9rem;
+    border-radius: 9999px;
+    background: #f2d6c0;
+    color: #7c4c2e;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.dashboard-map {
+    margin-top: 1.5rem;
+    height: 420px;
+    border-radius: 1.5rem;
+    border: 1px solid #d9c3b5;
+    overflow: hidden;
+    background: #fbf2ed;
+}
+
+.dashboard-info-grid {
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-info-card {
+    background: #f7efe6;
+    padding: 1rem;
+    border: 1px solid #d9c3b5;
+    border-radius: 1.25rem;
+}
+
+.dashboard-info-card p {
+    margin: 0;
+}
+
+.dashboard-accelerometer {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.dashboard-accel-header {
+    padding: 1rem;
+    border: 1px solid #d9c3b5;
+    border-radius: 1.5rem;
+    background: #f7efe6;
+}
+
+.dashboard-accel-header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dashboard-accel-highlight {
+    border-radius: 1.5rem;
+    background: #7c4c2e;
+    color: #ffffff;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 10px 25px rgba(124, 76, 46, 0.22);
+    transition: background 0.2s ease;
+}
+
+.dashboard-accel-highlight:hover {
+    background: #5d4331;
+}
+
+.dashboard-chart-card {
+    padding: 1rem;
+    background: #fbf2ed;
+}
+
+.dashboard-score-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-score-card {
+    padding: 1rem;
+    background: #f7efe6;
+}
+
+.dashboard-score-card-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #7c5a44;
+    margin-bottom: 0.75rem;
+}
+
+.dashboard-score-card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.dashboard-text-muted {
+    color: #6b7280;
+}
+
+/* Dark Mode Styles */
+html.dark-mode {
+    color-scheme: dark;
+}
+
+html.dark-mode .dashboard-shell {
+    background: #1a1410;
+    color: #e8dfd5;
+}
+
+html.dark-mode .dashboard-sidebar {
+    background: linear-gradient(180deg, #3d2817 0%, #2d1f14 100%);
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.44);
+}
+
+html.dark-mode .dashboard-nav-link {
+    color: #d4c5b9;
+}
+
+html.dark-mode .dashboard-nav-link:hover,
+html.dark-mode .dashboard-nav-link.active {
+    background: rgba(212, 197, 185, 0.15);
+    color: #ffffff;
+}
+
+html.dark-mode .dashboard-main {
+    background: #1a1410;
+}
+
+html.dark-mode .dashboard-title {
+    color: #e8dfd5;
+}
+
+html.dark-mode .dashboard-description {
+    color: #a89f95;
+}
+
+html.dark-mode .dashboard-card,
+html.dark-mode .dashboard-panel,
+html.dark-mode .dashboard-chart-card,
+html.dark-mode .dashboard-score-card {
+    background: rgba(40, 32, 26, 0.95);
+    border: 1px solid #3d2f26;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.36);
+}
+
+html.dark-mode .dashboard-card:hover,
+html.dark-mode .dashboard-panel:hover,
+html.dark-mode .dashboard-score-card:hover {
+    box-shadow: 0 24px 45px rgba(0, 0, 0, 0.44);
+}
+
+html.dark-mode .dashboard-section {
+    background: rgba(40, 32, 26, 0.9);
+}
+
+html.dark-mode .dashboard-section-header {
+    border-bottom: 1px solid #3d2f26;
+}
+
+html.dark-mode .dashboard-section-title {
+    color: #e8dfd5;
+}
+
+html.dark-mode .dashboard-section-subtitle {
+    color: #9b8a7e;
+}
+
+html.dark-mode .dashboard-chip {
+    background: #3d2f26;
+    color: #d4a574;
+}
+
+html.dark-mode .dashboard-map {
+    background: #2d2219;
+    border: 1px solid #3d2f26;
+}
+
+html.dark-mode .dashboard-info-card {
+    background: #2d2219;
+    border: 1px solid #3d2f26;
+}
+
+html.dark-mode .dashboard-accel-header {
+    background: #2d2219;
+    border: 1px solid #3d2f26;
+}
+
+html.dark-mode .dashboard-accel-highlight {
+    background: #5d4331;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.44);
+}
+
+html.dark-mode .dashboard-accel-highlight:hover {
+    background: #7c4c2e;
+}
+
+html.dark-mode .dashboard-chart-card {
+    background: #2d2219;
+}
+
+html.dark-mode .dashboard-score-card {
+    background: #2d2219;
+}
+
+html.dark-mode .dashboard-score-card-title {
+    color: #9b8a7e;
+}
+
+html.dark-mode .dashboard-score-card-value {
+    color: #e8dfd5;
+}
+
+html.dark-mode p {
+    color: #e8dfd5;
+}
+
+html.dark-mode .text-\[\#7c5a44\] {
+    color: #c9a88e !important;
+}
+
+html.dark-mode .text-\[\#7c4c2e\] {
+    color: #d4a574 !important;
+}
+
+html.dark-mode .text-\[\#5d4331\] {
+    color: #a89f95 !important;
+}
