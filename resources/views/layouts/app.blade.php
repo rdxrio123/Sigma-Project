@@ -31,11 +31,7 @@
             </svg>
         </button>
 
-        @php
-            $showSidebar = !request()->routeIs(['login', 'register']);
-        @endphp
-
-        @if ($showSidebar)
+        @if (!in_array(request()->path(), ['login', 'register']))
             <div class="dashboard-shell">
                 <aside class="dashboard-sidebar">
                     <div class="dashboard-sidebar-inner">
