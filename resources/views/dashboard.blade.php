@@ -1,10 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.dashboard')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 @endpush
 
-@section('content')
+@section('dashboard-content')
         <div class="dashboard-container">
             <header class="dashboard-header">
                 <div>
