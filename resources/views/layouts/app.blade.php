@@ -9,10 +9,11 @@
 </head>
 <body class="antialiased">
     <div id="app" style="position: relative;">
-        <button id="theme-toggle-btn" 
+        <button id="theme-toggle-btn" class="theme-toggle-btn"
             style="position: absolute; 
                    top: 2rem; 
                    right: 2rem; 
+                   z-index: 9999;
                    background: rgba(0, 0, 0, 0.3); 
                    backdrop-filter: blur(8px); 
                    -webkit-backdrop-filter: blur(8px); 
