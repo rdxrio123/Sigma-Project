@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return Auth::check() ? redirect()->route('dashboard') : view('login');
+    return Auth::check() ? redirect()->route('dashboard') : view('auth.login');
 });
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
