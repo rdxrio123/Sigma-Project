@@ -1,16 +1,72 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="dashboard-shell">
-    <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" title="Toggle sidebar">
-        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-        </svg>
-    </button>
+<div class="panel-layout">
+    <header class="mobile-top-nav">
+        <div class="mobile-logo">SIGMA</div>
+        <button class="btn-toggle-sidebar" id="mobile-sidebar-toggle" type="button" aria-label="Toggle sidebar">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="mobile-top-actions">
+            <button id="theme-toggle" class="btn-toggle-sidebar" title="Toggle Dark Mode">
+                <i class="fa-solid fa-moon"></i>
+            </button>
+            <span class="mobile-user">{{ auth()->user()?->name ?? auth()->user()?->email ?? 'User' }}</span>
+            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                @csrf
+                <button type="submit" class="btn-mobile-logout" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     @include('components.sidebar')
 
-    <main class="dashboard-main">
+    <main class="panel-content">
         @yield('dashboard-content')
     </main>
+
+    <nav class="bottom-nav">
+        <a href="{{ route('dashboard') }}" class="bottom-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <div class="bottom-nav-icon-wrapper"><i class="fa-solid fa-gauge-high"></i></div>
+            <span>Dashboard</span>
+        </a>
+        <a href="{{ route('alarm') }}" class="bottom-nav-link {{ request()->routeIs('alarm') ? 'active' : '' }}">
+            <div class="bottom-nav-icon-wrapper"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <span>Alarm</span>
+        </a>
+    </nav>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDesktop = document.getElementById('theme-toggle-desktop');
+        const htmlElement = document.documentElement;
+        
+        // Initial check
+        if (localStorage.getItem('theme') === 'dark') {
+            htmlElement.classList.add('dark-mode');
+        }
+
+        const toggleTheme = () => {
+            htmlElement.classList.toggle('dark-mode');
+            if (htmlElement.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        };
+
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', toggleTheme);
+        }
+        if (themeToggleDesktop) {
+            themeToggleDesktop.addEventListener('click', toggleTheme);
+        }
+    });
+</script>
 @endsection

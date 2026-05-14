@@ -1,167 +1,129 @@
 @media (max-width: 1024px) {
-	.dashboard-shell {
-		flex-wrap: wrap;
+	.mobile-top-nav,
+	.bottom-nav {
+		display: flex;
 	}
 
-	.dashboard-sidebar {
+	.sidebar {
 		position: fixed;
-		top: 0;
 		left: 0;
-		z-index: 1000;
-		width: 100%;
-		height: 100vh;
+		top: 0;
+		z-index: 1100;
 		transform: translateX(-100%);
-		transition: transform 0.3s ease;
-		overflow-y: auto;
+		transition: transform 0.25s ease;
+		height: 100vh;
+		box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
 	}
 
-	.dashboard-sidebar.mobile-visible {
+	.sidebar.is-open {
 		transform: translateX(0);
 	}
 
-	.dashboard-main {
-		width: 100%;
-		padding: 5rem 1rem 1.25rem;
+	.sidebar-overlay.is-visible {
+		display: block;
 	}
 
-	.dashboard-container {
-		gap: 1rem;
+	.panel-content {
+		padding: 5.25rem 1rem 5.5rem;
 	}
 
-	.dashboard-header {
+	.content-header-flex {
 		flex-direction: column;
 		align-items: stretch;
 	}
 
-	.dashboard-stats-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+	.datetime-widget {
+		text-align: left;
+		min-width: 0;
 	}
 
-	.grid.gap-6.lg\:grid-cols-2 {
-		grid-template-columns: 1fr;
+	.sensor-map {
+		height: 320px;
 	}
 
-	.dashboard-section,
-	.dashboard-card,
-	.dashboard-score-card {
-		border-radius: 1.25rem;
-	}
-
-	.dashboard-section {
-		padding: 1.25rem;
-	}
-
-	.dashboard-card {
-		padding: 1.1rem;
-	}
-
-	.dashboard-map {
-		min-height: 260px;
-	}
-
-	.dashboard-chart-card {
-		min-height: 300px;
-	}
-
-	.dashboard-info-grid,
-	.dashboard-score-grid {
-		gap: 0.85rem;
-	}
-
-	.dashboard-info-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
-	.dashboard-score-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-
-	.dashboard-accel-header-inner,
-	.dashboard-section-header {
+	.dashboard-accel-header-inner {
 		flex-direction: column;
 		align-items: flex-start;
 	}
 
-	.theme-toggle-btn {
-		top: 1rem !important;
-		right: 1rem !important;
-		padding: 0.6rem !important;
+	.dashboard-accel-highlight {
+		width: 100%;
+	}
+
+	.panel-card,
+	.stat-card,
+	.log-card,
+	.dashboard-chart-card,
+	.dashboard-score-card {
+		border-radius: 1.25rem;
 	}
 }
 
 @media (max-width: 768px) {
-	.dashboard-main {
-		padding: 4.5rem 0.85rem 1rem;
+	.panel-content {
+		padding-inline: 0.85rem;
 	}
 
-	.dashboard-stats-grid,
+	.summary-grid,
 	.dashboard-info-grid,
 	.dashboard-score-grid {
 		grid-template-columns: 1fr;
 	}
 
-	.dashboard-title {
-		font-size: 1.8rem;
+	.sensor-map {
+		height: 260px;
 	}
 
-	.dashboard-description {
-		max-width: none;
-		font-size: 0.92rem;
+	.sensor-chart {
+		height: 230px;
 	}
 
-	.dashboard-card,
-	.dashboard-section,
-	.dashboard-score-card,
-	.dashboard-info-card {
+	.time-display {
+		font-size: 1.3rem;
+	}
+
+	.data-table th,
+	.data-table td {
+		padding: 0.75rem 0.65rem;
+	}
+
+	.section-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.panel-card,
+	.stat-card,
+	.log-card,
+	.dashboard-chart-card,
+	.dashboard-score-card {
 		padding: 1rem;
-	}
-
-	.dashboard-map {
-		min-height: 220px;
-	}
-
-	.dashboard-chart-card {
-		min-height: 260px;
-	}
-
-	.dashboard-section-title {
-		font-size: 1.05rem;
-	}
-
-	.dashboard-section-subtitle {
-		font-size: 0.85rem;
-	}
-
-	.dashboard-nav-link,
-	.dropdown-item {
-		padding: 0.7rem 0.85rem;
 	}
 }
 
 @media (max-width: 480px) {
-	.dashboard-main {
-		padding: 4.25rem 0.65rem 0.85rem;
+	.mobile-top-actions {
+		gap: 0.5rem;
 	}
 
-	.dashboard-title {
-		font-size: 1.6rem;
+	.mobile-user {
+		display: none;
 	}
 
-	.dashboard-card p,
-	.dashboard-score-card-value {
-		font-size: 1.1rem;
+	.panel-content {
+		padding-top: 5rem;
+		padding-bottom: 5.7rem;
 	}
 
-	.dashboard-map {
-		min-height: 200px;
+	.sensor-map {
+		height: 220px;
 	}
 
-	.dashboard-chart-card {
-		min-height: 240px;
+	.sensor-chart {
+		height: 210px;
 	}
 
-	.mobile-sidebar-toggle {
-		top: 1rem;
-		left: 1rem;
+	.data-table {
+		font-size: 0.82rem;
 	}
 }

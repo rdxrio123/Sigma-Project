@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAccelerometerRequest;
+use App\Http\Requests\StoreGpsRequest;
 use App\Models\AccelerometerData;
 use App\Models\GPSData;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Validator;
 
 class SensorDataController extends Controller
 {
-    public function storeGps(Request $request): JsonResponse
+    public function storeGps(StoreGpsRequest $request): JsonResponse
     {
         if ($request->isMethod('get')) {
             return response()->json([
@@ -26,7 +25,7 @@ class SensorDataController extends Controller
             ]);
         }
 
-        $validated = $this->validateGpsPayload($request->all());
+        $validated = $request->validated();
 
         $gpsData = GPSData::create([
             'device_id' => $validated['device_id'] ?? null,
@@ -45,7 +44,7 @@ class SensorDataController extends Controller
         ], 201);
     }
 
-    public function storeAccelerometer(Request $request): JsonResponse
+    public function storeAccelerometer(StoreAccelerometerRequest $request): JsonResponse
     {
         if ($request->isMethod('get')) {
             return response()->json([
@@ -58,7 +57,7 @@ class SensorDataController extends Controller
             ]);
         }
 
-        $validated = $this->validateAccelerometerPayload($request->all());
+        $validated = $request->validated();
 
         $magnitude = isset($validated['magnitude'])
             ? (float) $validated['magnitude']
@@ -115,46 +114,6 @@ class SensorDataController extends Controller
         return $recordedAt ? Carbon::parse($recordedAt) : now();
     }
 
-    private function validateGpsPayload(array $payload): array
-    {
-        return $this->validatePayload($payload, [
-            'device_id' => ['nullable', 'string', 'max:100'],
-            'latitude' => ['required', 'numeric', 'between:-90,90'],
-            'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'altitude' => ['nullable', 'numeric'],
-            'satellites' => ['nullable', 'integer', 'min:0'],
-            'status' => ['nullable', 'string', 'max:50'],
-            'recorded_at' => ['nullable', 'date'],
-        ]);
-    }
-
-    private function validateAccelerometerPayload(array $payload): array
-    {
-        return $this->validatePayload($payload, [
-            'device_id' => ['nullable', 'string', 'max:100'],
-            'x' => ['required', 'numeric'],
-            'y' => ['required', 'numeric'],
-            'z' => ['required', 'numeric'],
-            'magnitude' => ['nullable', 'numeric'],
-            'recorded_at' => ['nullable', 'date'],
-        ]);
-    }
-
-    private function validatePayload(array $payload, array $rules): array
-    {
-        $validator = Validator::make($payload, $rules);
-
-        if ($validator->fails()) {
-            throw new HttpResponseException(response()->json([
-                'success' => false,
-                'message' => 'Invalid sensor payload.',
-                'errors' => $validator->errors(),
-            ], 422));
-        }
-
-        return $validator->validated();
-    }
-
     private function toJakartaTimeString(?Carbon $recordedAt, string $format): ?string
     {
         if ($recordedAt === null) {
@@ -172,7 +131,7 @@ class SensorDataController extends Controller
             return '--';
         }
 
-        return $formatted . ' WIB';
+        return $formatted.' WIB';
     }
 
     protected function formatGpsData(?GPSData $gpsData): array

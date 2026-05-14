@@ -3,362 +3,447 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
-#include <TinyGPSPlus.h>       // <-- Menggunakan TinyGPSPlus
+#include <TinyGPSPlus.h>
 #include <HardwareSerial.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 
+// ---------------------------------------------------------
+// HARDWARE CONFIGURATION
+// ---------------------------------------------------------
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// Alamat I2C default adalah 0x53
-Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
-TinyGPSPlus gps;               // <-- Menggunakan objek TinyGPSPlus
-HardwareSerial gpsSerial(2); 
-
-// --- Pin Aktuator dan Sensor ---
 #define BUZZER_PIN 2
 #define GPS_RX 16
 #define GPS_TX 17
 
-// --- Konfigurasi WiFi dan API lokal ---
+// ---------------------------------------------------------
+// NETWORK & API CONFIGURATION
+// ---------------------------------------------------------
 const char* WIFI_SSID = "Maison";
 const char* WIFI_PASSWORD = "SANGATLUXU";
 const char* DEVICE_ID = "esp32-sigma-01";
 const char* API_BASE_URL = "http://192.168.1.8:8000/api";
 
-float baseline_g = 0.0; 
-float smoothed_pga = 0.0; // Variabel untuk menyimpan nilai halus (filter)
+// ---------------------------------------------------------
+// GLOBAL OBJECTS
+// ---------------------------------------------------------
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+TinyGPSPlus gps;
+HardwareSerial gpsSerial(2);
 
-// --- Variabel Timer Buzzer ---
-unsigned long buzzer_timer = 0; 
-bool status_buzzer_aktif = false; 
+// ---------------------------------------------------------
+// SENSOR STATE
+// ---------------------------------------------------------
+struct SensorState {
+    float baselineG = 0.0;
+    float smoothedPga = 0.0;
+    float lastX = 0.0;
+    float lastY = 0.0;
+    float lastZ = 0.0;
+    unsigned long vibrationStartTime = 0;
+    unsigned long lastVibrationTime = 0;
+    bool isBuzzerActive = false;
+    unsigned long buzzerActivationTime = 0;
+} state;
 
-// --- Variabel Anti-Benturan (Debounce / Time Windowing) ---
-unsigned long waktu_mulai_getar = 0;
-unsigned long waktu_terakhir_getar = 0;
-const int SYARAT_DURASI_GEMPA = 1200; // Getaran harus bertahan 1.2 detik (1200 ms) agar dianggap gempa
-const int JEDA_RESET_GETARAN = 800;   // Jika 0.8 detik tidak ada getaran, reset timer (berarti cuma benturan)
-const float BATAS_AWAL_GETARAN = 1.5; // Batas minimal getaran mulai dihitung
-const float BATAS_ALARM_BUNYI = 3.9 * 2; // Batas getaran untuk membunyikan sirine (Sesuaikan kebutuhan)
+// ---------------------------------------------------------
+// TUNING PARAMETERS
+// ---------------------------------------------------------
+const int VIBRATION_DURATION_REQ = 1200;   // ms
+const int VIBRATION_RESET_DELAY = 800;     // ms
+const float VIBRATION_START_THRESHOLD = 1.5;
+const float ALARM_THRESHOLD = 7.8;         // MMI V threshold
+const unsigned long UPLOAD_INTERVAL_MS = 2000;         // sinkron dengan dashboard polling
+const unsigned long DISPLAY_UPDATE_INTERVAL_MS = 1000;
+const unsigned long WIFI_RECONNECT_INTERVAL_MS = 10000;
+const int HTTP_TIMEOUT_MS = 3000;          // timeout agar tidak hang
+
+// ---------------------------------------------------------
+// TIMING STATE
+// ---------------------------------------------------------
 unsigned long lastUploadMillis = 0;
-const unsigned long UPLOAD_INTERVAL_MS = 5000;
+unsigned long lastDisplayUpdate = 0;
+unsigned long lastWifiCheck = 0;
 
-String apiEndpointGps = String(API_BASE_URL) + "/sensors/gps";
-String apiEndpointAccelerometer = String(API_BASE_URL) + "/sensors/accelerometer";
+// ---------------------------------------------------------
+// FUNCTION PROTOTYPES
+// ---------------------------------------------------------
+void connectToWiFi();
+void ensureWiFiConnected();
+void calibrateSensor();
+void processGPS();
+void processAccelerometer();
+void updateDisplayAndSerial(const String& mmiStatus);
+void uploadData();
+String getStatusMMI(float pga);
+bool buildRecordedAt(char* buffer, size_t bufferSize);
+bool postJson(const char* url, const char* payload);
 
-void connectToWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  Serial.print("Menghubungkan WiFi");
-
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-    delay(500);
-    Serial.print(".");
-    attempts++;
-  }
-
-  Serial.println();
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("OK: WiFi Terhubung.");
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println("WARNING: WiFi belum tersambung, upload JSON akan dilewati dulu.");
-  }
-}
-
-String buildRecordedAtJsonValue() {
-  if (gps.date.isValid() && gps.time.isValid()) {
-    char buffer[25];
-    snprintf(
-      buffer,
-      sizeof(buffer),
-      "%04d-%02d-%02dT%02d:%02d:%02dZ",
-      gps.date.year(),
-      gps.date.month(),
-      gps.date.day(),
-      gps.time.hour(),
-      gps.time.minute(),
-      gps.time.second()
-    );
-    return String("\"") + buffer + String("\"");
-  }
-
-  return String("null");
-}
-
-bool postJson(const String& url, const String& payload) {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("ERROR: WiFi belum terhubung.");
-    return false;
-  }
-
-  WiFiClient client;
-  HTTPClient http;
-
-  if (!http.begin(client, url)) {
-    Serial.println("ERROR: Gagal memulai HTTP client.");
-    return false;
-  }
-
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Accept", "application/json");
-  int httpCode = http.POST(payload);
-
-  Serial.print("POST ");
-  Serial.print(url);
-  Serial.print(" -> HTTP ");
-  Serial.println(httpCode);
-
-  if (httpCode > 0) {
-    String response = http.getString();
-    Serial.println(response);
-  }
-
-  http.end();
-  return httpCode > 0 && httpCode < 400;
-}
-
-bool sendGpsJson() {
-  if (!gps.location.isValid()) {
-    return false;
-  }
-
-  String payload = String("{")
-    + "\"device_id\":\"" + DEVICE_ID + "\""
-    + ",\"latitude\":" + String(gps.location.lat(), 7)
-    + ",\"longitude\":" + String(gps.location.lng(), 7)
-    + ",\"altitude\":" + (gps.altitude.isValid() ? String(gps.altitude.meters(), 2) : String("null"))
-    + ",\"satellites\":" + String(gps.satellites.isValid() ? gps.satellites.value() : 0)
-    + ",\"status\":\"" + String(gps.location.isValid() ? "3D FIX" : "NO FIX") + "\""
-    + ",\"recorded_at\":" + buildRecordedAtJsonValue()
-    + "}";
-
-  return postJson(apiEndpointGps, payload);
-}
-
-bool sendAccelerometerJson(float pga, const String& mmiStatus) {
-  float x = 0.0;
-  float y = 0.0;
-  float z = 0.0;
-
-  sensors_event_t event;
-  if (accel.getEvent(&event)) {
-    x = event.acceleration.x;
-    y = event.acceleration.y;
-    z = event.acceleration.z;
-  }
-
-  String payload = String("{")
-    + "\"device_id\":\"" + DEVICE_ID + "\""
-    + ",\"x\":" + String(x, 4)
-    + ",\"y\":" + String(y, 4)
-    + ",\"z\":" + String(z, 4)
-    + ",\"magnitude\":" + String(pga, 4)
-    + ",\"recorded_at\":" + buildRecordedAtJsonValue()
-    + "}";
-
-  Serial.print("Status kirim accelerometer: ");
-  Serial.println(mmiStatus);
-
-  return postJson(apiEndpointAccelerometer, payload);
-}
-
-String getStatusMMI(float pga) {
-  if (pga < 0.17 * 2) return "I(Aman)";
-  else if (pga < 1.4 * 2) return "II-III(Lemah)";
-  else if (pga < 3.9 * 2) return "IV(Waspada)";
-  else if (pga < 9.2 * 2) return "V(Bahaya!)";
-  else return "VI+(AWAS!)"; 
-}
-
+// ---------------------------------------------------------
+// SETUP
+// ---------------------------------------------------------
 void setup() {
-  Serial.begin(115200);
-  Serial.println("\n--- Memulai Sistem Pendeteksi Gempa SIGMA ---");
-  
-  pinMode(BUZZER_PIN, OUTPUT);
-  digitalWrite(BUZZER_PIN, LOW); 
-  
-  gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
+    Serial.begin(115200);
+    Serial.println(F("\n=== SIGMA Earthquake Detector System ==="));
 
-  connectToWiFi();
-  
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-    Serial.println("ERROR: Gagal menemukan layar OLED!");
-    for(;;); 
-  }
-  Serial.println("OK: OLED Terhubung.");
-  
-  if(!accel.begin()) {
-    Serial.println("ERROR: Gagal menemukan ADXL345!");
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.setTextColor(WHITE);
-    display.println("ADXL345 Error!");
-    display.display();
-    for(;;); 
-  }
-  Serial.println("OK: ADXL345 Terhubung.");
-  
-  accel.setRange(ADXL345_RANGE_2_G);
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, LOW);
 
-  Serial.println("Memulai kalibrasi penempatan...");
-  for (int i = 5; i > 0; i--) {
+    gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
+
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        Serial.println(F("ERROR: OLED init failed"));
+        while (true) { delay(1000); }
+    }
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 10);
-    display.println("Mode Tembok SIGMA");
-    display.print("Kalibrasi dalam: ");
-    display.print(i);
-    display.println(" s");
-    display.println("JAUHI TEMBOK!");
+    display.println(F("SIGMA Booting..."));
     display.display();
-    
-    Serial.print("Kalibrasi dalam: ");
-    Serial.print(i);
-    Serial.println(" detik");
-    delay(1000);
-  }
 
-  display.clearDisplay();
-  display.setCursor(0, 10);
-  display.println("Merekam Gravitasi...");
-  display.display();
-  Serial.println("Merekam Gravitasi Dasar (Baseline)...");
-  
-  float sum_g = 0;
-  for(int i = 0; i < 100; i++) {
-    sensors_event_t event;
-    accel.getEvent(&event);
-    sum_g += sqrt(pow(event.acceleration.x, 2) + pow(event.acceleration.y, 2) + pow(event.acceleration.z, 2));
-    delay(20);
-  }
-  baseline_g = sum_g / 100.0; 
-  
-  Serial.print("Baseline gravitasi didapat: ");
-  Serial.println(baseline_g);
-  Serial.println("--- ALAT AKTIF & STANDBY ---");
-  
-  display.clearDisplay();
-  display.setCursor(0, 10);
-  display.println("Alat Aktif!");
-  display.display();
-  delay(1000);
+    connectToWiFi();
+
+    if (!accel.begin()) {
+        Serial.println(F("ERROR: ADXL345 init failed"));
+        display.clearDisplay();
+        display.setCursor(0, 10);
+        display.println(F("ADXL345 Error!"));
+        display.display();
+        while (true) { delay(1000); }
+    }
+    accel.setRange(ADXL345_RANGE_2_G);
+
+    calibrateSensor();
+
+    Serial.println(F("=== SYSTEM STANDBY ==="));
+    display.clearDisplay();
+    display.setCursor(0, 10);
+    display.println(F("System Ready"));
+    display.display();
+    delay(1000);
 }
 
+// ---------------------------------------------------------
+// MAIN LOOP
+// ---------------------------------------------------------
 void loop() {
-  // Update Data GPS
-  while (gpsSerial.available() > 0) {
-    gps.encode(gpsSerial.read());
-  }
+    unsigned long now = millis();
 
-  // Baca Data ADXL345
-  sensors_event_t event;
-  if(accel.getEvent(&event)) { 
-    float total_g = sqrt(pow(event.acceleration.x, 2) + pow(event.acceleration.y, 2) + pow(event.acceleration.z, 2));
-    float raw_pga = abs(total_g - baseline_g); 
+    processGPS();
+    processAccelerometer();
 
-    // 1. FILTER LOW-PASS (Data Smoothing)
-    smoothed_pga = (0.15 * raw_pga) + (0.85 * smoothed_pga);
-
-    // 2. FILTER DEADZONE (Abaikan getaran sangat kecil/noise sensor)
-    if (smoothed_pga < 0.8) { 
-        smoothed_pga = 0.0;
+    // Auto-reconnect WiFi jika terputus
+    if (now - lastWifiCheck >= WIFI_RECONNECT_INTERVAL_MS) {
+        ensureWiFiConnected();
+        lastWifiCheck = now;
     }
 
-    // 3. LOGIKA DETEKSI GEMPA VS BENTURAN (Time Windowing)
-    if (smoothed_pga >= BATAS_AWAL_GETARAN) {
-      waktu_terakhir_getar = millis(); 
-      
-      if (waktu_mulai_getar == 0) {
-        waktu_mulai_getar = millis(); 
-      }
-
-      unsigned long durasi_bergetar = millis() - waktu_mulai_getar;
-      
-      if (durasi_bergetar >= SYARAT_DURASI_GEMPA && smoothed_pga >= BATAS_ALARM_BUNYI) {
-        status_buzzer_aktif = true;      
-        buzzer_timer = millis();         
-        digitalWrite(BUZZER_PIN, HIGH);  
-      }
+    // Update OLED + Serial setiap 1 detik
+    if (now - lastDisplayUpdate >= DISPLAY_UPDATE_INTERVAL_MS) {
+        updateDisplayAndSerial(getStatusMMI(state.smoothedPga));
+        lastDisplayUpdate = now;
     }
 
-    if (waktu_mulai_getar > 0 && (millis() - waktu_terakhir_getar > JEDA_RESET_GETARAN)) {
-      waktu_mulai_getar = 0; 
+    // Upload data setiap 2 detik
+    if (now - lastUploadMillis >= UPLOAD_INTERVAL_MS) {
+        uploadData();
+        lastUploadMillis = now;
     }
+}
 
-    // --- PROSEDUR PENGUNCIAN SUARA 1 DETIK ---
-    if (status_buzzer_aktif) {
-      if (millis() - buzzer_timer >= 1000) {
-        status_buzzer_aktif = false;   
-        digitalWrite(BUZZER_PIN, LOW); 
-      }
+// ---------------------------------------------------------
+// WIFI
+// ---------------------------------------------------------
+void connectToWiFi() {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    Serial.print(F("Connecting to WiFi"));
+    display.clearDisplay();
+    display.setCursor(0, 10);
+    display.println(F("Connecting WiFi..."));
+    display.display();
+
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+        delay(500);
+        Serial.print(F("."));
+        attempts++;
+    }
+    Serial.println();
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.print(F("OK: WiFi Connected -> "));
+        Serial.println(WiFi.localIP());
     } else {
-      digitalWrite(BUZZER_PIN, LOW); 
+        Serial.println(F("WARNING: WiFi Connection Failed."));
+    }
+}
+
+void ensureWiFiConnected() {
+    if (WiFi.status() == WL_CONNECTED) {
+        return;
     }
 
-    // --- Pembaruan Antarmuka (Setiap 1000ms) ---
-    static unsigned long lastUpdate = 0;
-    if (millis() - lastUpdate > 1000) {
-      String mmiStatus = getStatusMMI(smoothed_pga);
-      
-      display.clearDisplay();
-      display.setCursor(0, 0);
-      display.println("-- SIGMA Penopang --");
-      display.print("PGA: "); display.print(smoothed_pga, 2); display.println(" m/s2");
-      display.print("MMI: "); display.println(mmiStatus);
-      
-      // Menggunakan sintaks TinyGPSPlus
-      if (gps.location.isValid()) {
-        display.print("Lat: "); display.println(gps.location.lat(), 4);
-      } else {
-        display.println("GPS: Mencari Sinyal");
-      }
-      display.display();
+    Serial.println(F("WiFi disconnected. Reconnecting..."));
+    WiFi.disconnect();
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-      Serial.println("============================");
-      Serial.print("Getaran (Filter): "); Serial.print(smoothed_pga, 2); Serial.println(" m/s2");
-      Serial.print("Status MMI      : "); Serial.println(mmiStatus);
-      
-      if (waktu_mulai_getar > 0) {
-        Serial.print("Durasi Getaran  : "); Serial.print(millis() - waktu_mulai_getar); Serial.println(" ms");
-      }
-
-      // Menggunakan sintaks TinyGPSPlus
-      if (gps.location.isValid()) {
-        Serial.print("Lokasi GPS      : Lat "); 
-        Serial.print(gps.location.lat(), 6);
-        Serial.print(", Lng ");
-        Serial.println(gps.location.lng(), 6);
-      } else {
-        Serial.println("Lokasi GPS      : Mencari Sinyal Satelit...");
-      }
-      
-      if (status_buzzer_aktif) {
-         Serial.println("ALARM BUZZER    : AKTIF !!! (GEMPA DETECTED)");
-      } else {
-         Serial.println("ALARM BUZZER    : Standby (Aman)");
-      }
-      Serial.println("============================\n");
-
-      if (millis() - lastUploadMillis >= UPLOAD_INTERVAL_MS) {
-        bool gpsSent = sendGpsJson();
-        bool accelSent = sendAccelerometerJson(smoothed_pga, mmiStatus);
-        Serial.print("Upload GPS       : ");
-        Serial.println(gpsSent ? "Berhasil" : "Gagal");
-        Serial.print("Upload Accel     : ");
-        Serial.println(accelSent ? "Berhasil" : "Gagal");
-        lastUploadMillis = millis();
-      }
-
-      lastUpdate = millis(); 
+    // Non-blocking: coba 3 detik saja, lalu lanjut loop
+    unsigned long start = millis();
+    while (WiFi.status() != WL_CONNECTED && (millis() - start) < 3000) {
+        delay(100);
     }
-  }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.print(F("WiFi reconnected: "));
+        Serial.println(WiFi.localIP());
+    } else {
+        Serial.println(F("WiFi reconnect failed. Will retry later."));
+    }
+}
+
+// ---------------------------------------------------------
+// CALIBRATION
+// ---------------------------------------------------------
+void calibrateSensor() {
+    Serial.println(F("Starting calibration..."));
+    for (int i = 5; i > 0; i--) {
+        display.clearDisplay();
+        display.setCursor(0, 10);
+        display.println(F("Calibration Mode"));
+        display.print(F("Time remaining: "));
+        display.print(i);
+        display.println(F("s"));
+        display.println(F("DO NOT MOVE!"));
+        display.display();
+        delay(1000);
+    }
+
+    display.clearDisplay();
+    display.setCursor(0, 10);
+    display.println(F("Recording Baseline..."));
+    display.display();
+
+    float sumG = 0;
+    int validSamples = 0;
+    for (int i = 0; i < 100; i++) {
+        sensors_event_t event;
+        if (accel.getEvent(&event)) {
+            sumG += sqrt(pow(event.acceleration.x, 2) + pow(event.acceleration.y, 2) + pow(event.acceleration.z, 2));
+            validSamples++;
+        }
+        delay(20);
+    }
+
+    if (validSamples > 0) {
+        state.baselineG = sumG / (float)validSamples;
+    } else {
+        state.baselineG = 9.81; // fallback ke 1G standar
+        Serial.println(F("WARNING: No valid calibration samples, using default 9.81"));
+    }
+
+    Serial.print(F("Baseline Gravity: "));
+    Serial.println(state.baselineG);
+}
+
+// ---------------------------------------------------------
+// SENSOR PROCESSING
+// ---------------------------------------------------------
+void processGPS() {
+    while (gpsSerial.available() > 0) {
+        gps.encode(gpsSerial.read());
+    }
+}
+
+void processAccelerometer() {
+    sensors_event_t event;
+    if (!accel.getEvent(&event)) {
+        return;
+    }
+
+    // Simpan nilai raw terakhir untuk upload
+    state.lastX = event.acceleration.x;
+    state.lastY = event.acceleration.y;
+    state.lastZ = event.acceleration.z;
+
+    float totalG = sqrt(pow(event.acceleration.x, 2) + pow(event.acceleration.y, 2) + pow(event.acceleration.z, 2));
+    float rawPga = abs(totalG - state.baselineG);
+
+    // Low-pass filter
+    state.smoothedPga = (0.15 * rawPga) + (0.85 * state.smoothedPga);
+
+    // Deadzone filter
+    if (state.smoothedPga < 0.8) {
+        state.smoothedPga = 0.0;
+    }
+
+    // Vibration detection logic
+    if (state.smoothedPga >= VIBRATION_START_THRESHOLD) {
+        state.lastVibrationTime = millis();
+        if (state.vibrationStartTime == 0) {
+            state.vibrationStartTime = millis();
+        }
+
+        unsigned long vibrationDuration = millis() - state.vibrationStartTime;
+
+        if (vibrationDuration >= VIBRATION_DURATION_REQ && state.smoothedPga >= ALARM_THRESHOLD) {
+            state.isBuzzerActive = true;
+            state.buzzerActivationTime = millis();
+            digitalWrite(BUZZER_PIN, HIGH);
+        }
+    }
+
+    if (state.vibrationStartTime > 0 && (millis() - state.lastVibrationTime > VIBRATION_RESET_DELAY)) {
+        state.vibrationStartTime = 0;
+    }
+
+    // Buzzer auto-off setelah 1 detik
+    if (state.isBuzzerActive) {
+        if (millis() - state.buzzerActivationTime >= 1000) {
+            state.isBuzzerActive = false;
+            digitalWrite(BUZZER_PIN, LOW);
+        }
+    } else {
+        digitalWrite(BUZZER_PIN, LOW);
+    }
+}
+
+String getStatusMMI(float pga) {
+    if (pga < 0.34) return "I (Aman)";
+    else if (pga < 2.8) return "II-III (Lemah)";
+    else if (pga < 7.8) return "IV (Waspada)";
+    else if (pga < 18.4) return "V (Bahaya!)";
+    else return "VI+ (AWAS!)";
+}
+
+// ---------------------------------------------------------
+// DISPLAY & SERIAL
+// ---------------------------------------------------------
+void updateDisplayAndSerial(const String& mmiStatus) {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println(F("SIGMA Monitor"));
+    display.print(F("PGA: ")); display.print(state.smoothedPga, 2); display.println(F(" m/s2"));
+    display.print(F("MMI: ")); display.println(mmiStatus);
+
+    if (gps.location.isValid()) {
+        display.print(F("Lat: ")); display.println(gps.location.lat(), 4);
+    } else {
+        display.println(F("GPS: Searching..."));
+    }
+
+    // Status WiFi di OLED
+    display.print(F("WiFi: "));
+    display.println(WiFi.status() == WL_CONNECTED ? F("OK") : F("--"));
+    display.display();
+
+    Serial.println(F("============================"));
+    Serial.print(F("PGA (Filtered): ")); Serial.print(state.smoothedPga, 2); Serial.println(F(" m/s2"));
+    Serial.print(F("MMI Status    : ")); Serial.println(mmiStatus);
+    Serial.print(F("Accel X/Y/Z   : ")); Serial.print(state.lastX, 2); Serial.print(F(" / ")); Serial.print(state.lastY, 2); Serial.print(F(" / ")); Serial.println(state.lastZ, 2);
+
+    if (state.vibrationStartTime > 0) {
+        Serial.print(F("Vib. Duration : ")); Serial.print(millis() - state.vibrationStartTime); Serial.println(F(" ms"));
+    }
+
+    if (gps.location.isValid()) {
+        Serial.print(F("GPS Location  : Lat ")); Serial.print(gps.location.lat(), 6);
+        Serial.print(F(", Lng ")); Serial.println(gps.location.lng(), 6);
+    } else {
+        Serial.println(F("GPS Location  : Searching for satellites..."));
+    }
+
+    Serial.print(F("ALARM         : ")); Serial.println(state.isBuzzerActive ? F("ACTIVE !!!") : F("Standby"));
+    Serial.print(F("WiFi          : ")); Serial.println(WiFi.status() == WL_CONNECTED ? F("Connected") : F("Disconnected"));
+    Serial.println(F("============================\n"));
+}
+
+// ---------------------------------------------------------
+// NETWORK UPLOAD
+// ---------------------------------------------------------
+bool buildRecordedAt(char* buffer, size_t bufferSize) {
+    if (gps.date.isValid() && gps.time.isValid()) {
+        snprintf(buffer, bufferSize, "%04d-%02d-%02dT%02d:%02d:%02dZ",
+            gps.date.year(), gps.date.month(), gps.date.day(),
+            gps.time.hour(), gps.time.minute(), gps.time.second());
+        return true;
+    }
+    return false;
+}
+
+bool postJson(const char* url, const char* payload) {
+    if (WiFi.status() != WL_CONNECTED) {
+        return false;
+    }
+
+    WiFiClient client;
+    HTTPClient http;
+    http.begin(client, url);
+    http.addHeader("Content-Type", "application/json");
+    http.setTimeout(HTTP_TIMEOUT_MS);
+
+    int httpCode = http.POST(payload);
+    bool success = (httpCode >= 200 && httpCode < 300);
+
+    if (!success) {
+        Serial.print(F("[HTTP] POST failed -> "));
+        Serial.print(url);
+        Serial.print(F(" code="));
+        Serial.println(httpCode);
+    }
+
+    http.end();
+    return success;
+}
+
+void uploadData() {
+    // Buffer untuk JSON payload (menggunakan stack, bukan heap String)
+    char payload[384];
+    char recordedAt[25];
+    bool hasTime = buildRecordedAt(recordedAt, sizeof(recordedAt));
+
+    // Endpoint URLs (buat sekali saja di stack)
+    char urlGps[128];
+    char urlAccel[128];
+    snprintf(urlGps, sizeof(urlGps), "%s/sensors/gps", API_BASE_URL);
+    snprintf(urlAccel, sizeof(urlAccel), "%s/sensors/accelerometer", API_BASE_URL);
+
+    // GPS Upload
+    if (gps.location.isValid()) {
+        if (hasTime) {
+            snprintf(payload, sizeof(payload),
+                "{\"device_id\":\"%s\",\"latitude\":%.7f,\"longitude\":%.7f,\"altitude\":%.2f,\"satellites\":%d,\"status\":\"3D FIX\",\"recorded_at\":\"%s\"}",
+                DEVICE_ID,
+                gps.location.lat(), gps.location.lng(),
+                gps.altitude.isValid() ? gps.altitude.meters() : 0.0,
+                gps.satellites.isValid() ? gps.satellites.value() : 0,
+                recordedAt);
+        } else {
+            snprintf(payload, sizeof(payload),
+                "{\"device_id\":\"%s\",\"latitude\":%.7f,\"longitude\":%.7f,\"altitude\":%.2f,\"satellites\":%d,\"status\":\"3D FIX\",\"recorded_at\":null}",
+                DEVICE_ID,
+                gps.location.lat(), gps.location.lng(),
+                gps.altitude.isValid() ? gps.altitude.meters() : 0.0,
+                gps.satellites.isValid() ? gps.satellites.value() : 0);
+        }
+        postJson(urlGps, payload);
+    }
+
+    // Accelerometer Upload
+    if (hasTime) {
+        snprintf(payload, sizeof(payload),
+            "{\"device_id\":\"%s\",\"x\":%.4f,\"y\":%.4f,\"z\":%.4f,\"magnitude\":%.4f,\"recorded_at\":\"%s\"}",
+            DEVICE_ID, state.lastX, state.lastY, state.lastZ, state.smoothedPga, recordedAt);
+    } else {
+        snprintf(payload, sizeof(payload),
+            "{\"device_id\":\"%s\",\"x\":%.4f,\"y\":%.4f,\"z\":%.4f,\"magnitude\":%.4f,\"recorded_at\":null}",
+            DEVICE_ID, state.lastX, state.lastY, state.lastZ, state.smoothedPga);
+    }
+    postJson(urlAccel, payload);
 }
