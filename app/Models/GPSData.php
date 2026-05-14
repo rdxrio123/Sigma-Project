@@ -9,6 +9,7 @@ class GPSData extends Model
     protected $table = 'gps_data';
 
     protected $fillable = [
+        'device_id',
         'latitude',
         'longitude',
         'altitude',

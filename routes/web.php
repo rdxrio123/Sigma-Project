@@ -4,6 +4,7 @@ use App\Http\Controllers\AlarmController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PanelController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,8 @@ Route::post('/register', [RegisterController::class, 'register']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/panel', [PanelController::class, 'index'])->name('panel');
+    Route::get('/panel/data/realtime', [PanelController::class, 'realtimeData'])->name('panel.data.realtime');
     Route::get('/alarm', [AlarmController::class, 'index'])->name('alarm');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

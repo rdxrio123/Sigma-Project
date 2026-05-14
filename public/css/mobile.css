@@ -1,0 +1,167 @@
+@media (max-width: 1024px) {
+	.dashboard-shell {
+		flex-wrap: wrap;
+	}
+
+	.dashboard-sidebar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 1000;
+		width: 100%;
+		height: 100vh;
+		transform: translateX(-100%);
+		transition: transform 0.3s ease;
+		overflow-y: auto;
+	}
+
+	.dashboard-sidebar.mobile-visible {
+		transform: translateX(0);
+	}
+
+	.dashboard-main {
+		width: 100%;
+		padding: 5rem 1rem 1.25rem;
+	}
+
+	.dashboard-container {
+		gap: 1rem;
+	}
+
+	.dashboard-header {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.dashboard-stats-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.grid.gap-6.lg\:grid-cols-2 {
+		grid-template-columns: 1fr;
+	}
+
+	.dashboard-section,
+	.dashboard-card,
+	.dashboard-score-card {
+		border-radius: 1.25rem;
+	}
+
+	.dashboard-section {
+		padding: 1.25rem;
+	}
+
+	.dashboard-card {
+		padding: 1.1rem;
+	}
+
+	.dashboard-map {
+		min-height: 260px;
+	}
+
+	.dashboard-chart-card {
+		min-height: 300px;
+	}
+
+	.dashboard-info-grid,
+	.dashboard-score-grid {
+		gap: 0.85rem;
+	}
+
+	.dashboard-info-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.dashboard-score-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.dashboard-accel-header-inner,
+	.dashboard-section-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.theme-toggle-btn {
+		top: 1rem !important;
+		right: 1rem !important;
+		padding: 0.6rem !important;
+	}
+}
+
+@media (max-width: 768px) {
+	.dashboard-main {
+		padding: 4.5rem 0.85rem 1rem;
+	}
+
+	.dashboard-stats-grid,
+	.dashboard-info-grid,
+	.dashboard-score-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.dashboard-title {
+		font-size: 1.8rem;
+	}
+
+	.dashboard-description {
+		max-width: none;
+		font-size: 0.92rem;
+	}
+
+	.dashboard-card,
+	.dashboard-section,
+	.dashboard-score-card,
+	.dashboard-info-card {
+		padding: 1rem;
+	}
+
+	.dashboard-map {
+		min-height: 220px;
+	}
+
+	.dashboard-chart-card {
+		min-height: 260px;
+	}
+
+	.dashboard-section-title {
+		font-size: 1.05rem;
+	}
+
+	.dashboard-section-subtitle {
+		font-size: 0.85rem;
+	}
+
+	.dashboard-nav-link,
+	.dropdown-item {
+		padding: 0.7rem 0.85rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.dashboard-main {
+		padding: 4.25rem 0.65rem 0.85rem;
+	}
+
+	.dashboard-title {
+		font-size: 1.6rem;
+	}
+
+	.dashboard-card p,
+	.dashboard-score-card-value {
+		font-size: 1.1rem;
+	}
+
+	.dashboard-map {
+		min-height: 200px;
+	}
+
+	.dashboard-chart-card {
+		min-height: 240px;
+	}
+
+	.mobile-sidebar-toggle {
+		top: 1rem;
+		left: 1rem;
+	}
+}
