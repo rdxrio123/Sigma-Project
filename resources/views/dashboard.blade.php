@@ -2,6 +2,8 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-o9N1j7kFqP1x2X/Lb+Q1Nn5Hnq0xearA/eCht+YLH6w=" crossorigin="" />
 @endpush
 
 @section('dashboard-content')
@@ -14,8 +16,28 @@
                 </div>
                 <div class="dashboard-stats-grid">
                     <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.em] text-[#7c5a44]">Magnitudo Getaran</p>
-                        <p class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['magnitude'], 2) }}</p>
+                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Status Sinkron</p>
+                        <p class="mt-3 text-base font-semibold text-emerald-700">Live Update Aktif</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Magnitudo Getaran</p>
+                        <p id="currentMagnitude" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['magnitude'], 2) }}</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Sumbu X</p>
+                        <p id="currentX" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['x'], 2) }}</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Sumbu Y</p>
+                        <p id="currentY" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['y'], 2) }}</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Sumbu Z</p>
+                        <p id="currentZ" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['z'], 2) }}</p>
+                    </div>
+                    <div class="dashboard-card">
+                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Update Terakhir</p>
+                        <p id="lastUpdatedAt" class="mt-3 text-base font-semibold leading-6">{{ $lastUpdatedAt ?? '--' }}</p>
                     </div>
                 </div>
             </header>
@@ -35,13 +57,26 @@
                     <div class="dashboard-info-grid">
                         <div class="dashboard-info-card">
                             <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Latitude</p>
-                            <p class="mt-2 text-base font-semibold">{{ $gps['latitude'] }}</p>
+                            <p id="gpsLatitude" class="mt-2 text-base font-semibold">{{ number_format($gps['latitude'], 7) }}</p>
                         </div>
                         <div class="dashboard-info-card">
                             <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Longitude</p>
-                            <p class="mt-2 text-base font-semibold">{{ $gps['longitude'] }}</p>
+                            <p id="gpsLongitude" class="mt-2 text-base font-semibold">{{ number_format($gps['longitude'], 7) }}</p>
+                        </div>
+                        <div class="dashboard-info-card">
+                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Altitude</p>
+                            <p id="gpsAltitude" class="mt-2 text-base font-semibold">{{ number_format($gps['altitude'], 2) }} m</p>
+                        </div>
+                        <div class="dashboard-info-card">
+                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Satellites</p>
+                            <p id="gpsSatellites" class="mt-2 text-base font-semibold">{{ $gps['satellites'] }}</p>
+                        </div>
+                        <div class="dashboard-info-card">
+                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Status</p>
+                            <p id="gpsStatus" class="mt-2 text-base font-semibold">{{ $gps['status'] }}</p>
                         </div>
                     </div>
+                    <p class="mt-4 text-sm text-[#7c5a44]">Update terakhir: <span id="gpsRecordedAt">{{ $gps['recorded_at'] }}</span></p>
                 </section>
 
                 <section class="dashboard-section">
@@ -50,99 +85,271 @@
                             <div class="dashboard-accel-header-inner">
                                 <div>
                                     <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Nilai X / Y / Z</p>
-                                    <p class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['x'], 2) }} / {{ number_format($currentAccel['y'], 2) }} / {{ number_format($currentAccel['z'], 2) }}</p>
+                                    <p id="currentAxes" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['x'], 2) }} / {{ number_format($currentAccel['y'], 2) }} / {{ number_format($currentAccel['z'], 2) }}</p>
                                 </div>
                                 <div class="dashboard-accel-highlight">
-                                    <p class="text-xs uppercase tracking-[0.2em]">Terkini</p>
-                                    <p class="mt-1 text-xl font-semibold">{{ $currentAccel['time'] }}</p>
+                                    <p class="text-xs uppercase tracking-[0.2em]">Realtime</p>
+                                    <p id="currentAccelTime" class="mt-1 text-xl font-semibold">{{ $currentAccel['time'] }}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div class="dashboard-chart-card">
-                            <canvas id="accelChart" class="h-[260px] w-full"></canvas>
+                            <div id="accelChart" class="h-[260px] w-full"></div>
                         </div>
 
                         <div class="dashboard-score-grid">
                             <div class="dashboard-score-card">
                                 <p class="dashboard-score-card-title">Magnitudo Maksimum</p>
-                                <p class="dashboard-score-card-value">{{ number_format(max(array_column($accelSamples, 'magnitude')), 2) }}</p>
+                                <p id="magnitudeMaximum" class="dashboard-score-card-value">{{ number_format($summary['maximum'], 2) }}</p>
                             </div>
                             <div class="dashboard-score-card">
                                 <p class="dashboard-score-card-title">Rata-rata getaran</p>
-                                <p class="dashboard-score-card-value">{{ number_format(array_sum(array_column($accelSamples, 'magnitude')) / count($accelSamples), 2) }}</p>
+                                <p id="magnitudeAverage" class="dashboard-score-card-value">{{ number_format($summary['average'], 2) }}</p>
+                            </div>
+                            <div class="dashboard-score-card">
+                                <p class="dashboard-score-card-title">Jumlah sampel</p>
+                                <p id="sampleCount" class="dashboard-score-card-value">{{ $summary['count'] }}</p>
                             </div>
                         </div>
                     </div>
                 </section>
             </div>
         </div>
+@endsection
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="{{ asset('js/theme.js') }}"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-o9N1j7kFqP1x2X/Lb+Q1Nn5Hnq0xearA/eCht+YLH6w=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-o3p3f3l0Qp5a4gC6KxEJQiqKfxT8IL4P6r4+4xXw4oQ=" crossorigin=""></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const gps = {
-            lat: parseFloat('{{ $gps['latitude'] }}'),
-            lng: parseFloat('{{ $gps['longitude'] }}'),
+        const initialDashboardData = {
+            gps: @json($gps),
+            currentAccel: @json($currentAccel),
+            accelSamples: @json($accelSamples),
+            summary: @json($summary),
+            lastUpdatedAt: @json($lastUpdatedAt),
+        };
+        const dashboardDataUrl = @json($dashboardDataUrl);
+        const dashboardRefreshIntervalMs = 2000;
+
+        let accelChart = null;
+        const mapState = {
+            map: null,
+            marker: null,
         };
 
-        const map = L.map('gps-map', {
-            center: [gps.lat, gps.lng],
-            zoom: 13,
-            scrollWheelZoom: false,
-        });
+        function formatNumber(value, digits = 2) {
+            const numericValue = Number(value);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-        }).addTo(map);
+            if (!Number.isFinite(numericValue)) {
+                return (0).toFixed(digits);
+            }
 
-        L.marker([gps.lat, gps.lng]).addTo(map)
-            .bindPopup(`GPS NEO-6M<br>Lat: ${gps.lat}<br>Lng: ${gps.lng}`)
-            .openPopup();
+            return numericValue.toFixed(digits);
+        }
 
-        const accelData = {
-            labels: @json(array_column($accelSamples, 'time')),
-            datasets: [{
-                label: 'Magnitudo (g)',
-                data: @json(array_column($accelSamples, 'magnitude')),
-                borderColor: '#ef4444',
-                backgroundColor: 'rgba(239, 68, 68, 0.18)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-            }],
-        };
+        function setText(id, value) {
+            const element = document.getElementById(id);
 
-        new Chart(document.getElementById('accelChart'), {
-            type: 'line',
-            data: accelData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { mode: 'index', intersect: false },
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#6b7280' },
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        function buildChartOptions(samples) {
+            return {
+                chart: {
+                    type: 'line',
+                    height: 260,
+                    toolbar: {
+                        show: false,
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(107, 114, 128, 0.15)' },
-                        ticks: { color: '#6b7280' },
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 600,
+                        dynamicAnimation: {
+                            enabled: true,
+                            speed: 350,
+                        },
+                    },
+                    background: 'transparent',
+                    foreColor: '#6b7280',
+                },
+                series: [
+                    {
+                        name: 'X',
+                        data: samples.map((sample) => sample.x),
+                    },
+                    {
+                        name: 'Y',
+                        data: samples.map((sample) => sample.y),
+                    },
+                    {
+                        name: 'Z',
+                        data: samples.map((sample) => sample.z),
+                    },
+                    {
+                        name: 'Magnitudo',
+                        data: samples.map((sample) => sample.magnitude),
+                    },
+                ],
+                xaxis: {
+                    categories: samples.map((sample) => sample.time),
+                    labels: {
+                        style: {
+                            colors: '#6b7280',
+                        },
                     },
                 },
-            },
-        });
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: '#6b7280',
+                        },
+                    },
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: [3, 3, 3, 4],
+                },
+                colors: ['#2563eb', '#16a34a', '#f59e0b', '#ef4444'],
+                fill: {
+                    type: 'solid',
+                    opacity: [0, 0, 0, 0.18],
+                },
+                markers: {
+                    size: [3, 3, 3, 4],
+                    hover: {
+                        size: 6,
+                    },
+                },
+                grid: {
+                    borderColor: 'rgba(107, 114, 128, 0.15)',
+                    strokeDashArray: 4,
+                },
+                tooltip: {
+                    shared: true,
+                    intersect: false,
+                    theme: 'light',
+                },
+                legend: {
+                    show: true,
+                    position: 'top',
+                    labels: {
+                        colors: '#6b7280',
+                    },
+                },
+            };
+        }
+
+        function renderChart(samples) {
+            const chartElement = document.getElementById('accelChart');
+
+            if (!chartElement) {
+                return;
+            }
+
+            const chartOptions = buildChartOptions(samples);
+
+            if (accelChart) {
+                accelChart.updateOptions({
+                    xaxis: chartOptions.xaxis,
+                    colors: chartOptions.colors,
+                    stroke: chartOptions.stroke,
+                    markers: chartOptions.markers,
+                    grid: chartOptions.grid,
+                    tooltip: chartOptions.tooltip,
+                    legend: chartOptions.legend,
+                }, false, false);
+                accelChart.updateSeries(chartOptions.series, true);
+
+                return;
+            }
+
+            accelChart = new ApexCharts(chartElement, chartOptions);
+            accelChart.render();
+        }
+
+        function renderMap(gps) {
+            const latitude = Number(gps.latitude);
+            const longitude = Number(gps.longitude);
+
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return;
+            }
+
+            if (!mapState.map) {
+                mapState.map = L.map('gps-map', {
+                    center: [latitude, longitude],
+                    zoom: 13,
+                    scrollWheelZoom: false,
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                }).addTo(mapState.map);
+
+                mapState.marker = L.marker([latitude, longitude]).addTo(mapState.map);
+            } else {
+                mapState.marker.setLatLng([latitude, longitude]);
+                mapState.map.setView([latitude, longitude], mapState.map.getZoom());
+            }
+
+            mapState.marker.bindPopup(`GPS NEO-6M<br>Lat: ${formatNumber(latitude, 7)}<br>Lng: ${formatNumber(longitude, 7)}`);
+        }
+
+        function applyDashboardData(data) {
+            setText('currentMagnitude', formatNumber(data.currentAccel.magnitude));
+            setText('currentX', formatNumber(data.currentAccel.x));
+            setText('currentY', formatNumber(data.currentAccel.y));
+            setText('currentZ', formatNumber(data.currentAccel.z));
+            setText('currentAxes', `${formatNumber(data.currentAccel.x)} / ${formatNumber(data.currentAccel.y)} / ${formatNumber(data.currentAccel.z)}`);
+            setText('currentAccelTime', data.currentAccel.time ?? '--');
+            setText('lastUpdatedAt', data.lastUpdatedAt ?? '--');
+
+            setText('gpsLatitude', formatNumber(data.gps.latitude, 7));
+            setText('gpsLongitude', formatNumber(data.gps.longitude, 7));
+            setText('gpsAltitude', `${formatNumber(data.gps.altitude, 2)} m`);
+            setText('gpsSatellites', data.gps.satellites ?? 0);
+            setText('gpsStatus', data.gps.status ?? 'NO FIX');
+            setText('gpsRecordedAt', data.gps.recorded_at ?? '--');
+
+            setText('magnitudeMaximum', formatNumber(data.summary.maximum));
+            setText('magnitudeAverage', formatNumber(data.summary.average));
+            setText('sampleCount', String(data.summary.count ?? 0));
+
+            renderChart(data.accelSamples);
+            renderMap(data.gps);
+        }
+
+        async function refreshDashboardData() {
+            try {
+                const response = await fetch(`${dashboardDataUrl}?t=${Date.now()}`, {
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                    cache: 'no-store',
+                    credentials: 'same-origin',
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                applyDashboardData(data);
+            } catch (error) {
+                console.error('Failed to refresh dashboard data', error);
+            }
+        }
+
+        applyDashboardData(initialDashboardData);
+        refreshDashboardData();
+        setInterval(refreshDashboardData, dashboardRefreshIntervalMs);
     });
 </script>
-@endsection
+@endpush

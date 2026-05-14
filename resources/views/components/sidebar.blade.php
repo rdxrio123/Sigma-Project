@@ -1,7 +1,7 @@
 <aside class="dashboard-sidebar" id="sidebar">
     <div class="dashboard-sidebar-inner">
         <div class="dashboard-sidebar-header">
-            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; flex: 1;">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 0.25rem; flex: 1;">
                 <h2 class="dashboard-brand">S.I.G.M.A</h2>
             </div>
             <button id="sidebar-toggle" class="sidebar-toggle" title="Toggle sidebar">

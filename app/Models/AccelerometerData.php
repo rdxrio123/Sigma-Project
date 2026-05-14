@@ -9,6 +9,7 @@ class AccelerometerData extends Model
     protected $table = 'accelerometer_data';
 
     protected $fillable = [
+        'device_id',
         'x',
         'y',
         'z',
