@@ -18,10 +18,10 @@ class AccelerometerData extends Model
     ];
 
     protected $casts = [
-        'x' => 'decimal:4',
-        'y' => 'decimal:4',
-        'z' => 'decimal:4',
-        'magnitude' => 'decimal:4',
+        'x' => 'float',
+        'y' => 'float',
+        'z' => 'float',
+        'magnitude' => 'float',
         'recorded_at' => 'datetime',
     ];
 }

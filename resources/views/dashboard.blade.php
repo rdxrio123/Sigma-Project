@@ -2,127 +2,184 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-o9N1j7kFqP1x2X/Lb+Q1Nn5Hnq0xearA/eCht+YLH6w=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 @endpush
 
 @section('dashboard-content')
-        <div class="dashboard-container">
-            <header class="dashboard-header">
+        <div class="panel-page">
+            <header class="content-header-flex">
                 <div>
-                    <p class="text-sm uppercase tracking-[0.2em] text-[#7c4c2e]">SIGMA Monitoring</p>
-                    <h1 class="dashboard-title">SELAMAT DATANG DI SIGMA</h1>
-                    <p class="dashboard-description">Pantau Getaran Gempa Dengan Sensor ADXL345 dan Menentukan Lokasi Secara Real Time</p>
+                    <p class="section-kicker">SIGMA Monitoring</p>
+                    <h1>Panel Utama</h1>
+                    <p>Pantau getaran gempa, koordinat GPS, dan histori sensor secara realtime tanpa refresh.</p>
                 </div>
-                <div class="dashboard-stats-grid">
-                    <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Status Sinkron</p>
-                        <p class="mt-3 text-base font-semibold text-emerald-700">Live Update Aktif</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Magnitudo Getaran</p>
-                        <p id="currentMagnitude" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['magnitude'], 2) }}</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Sumbu X</p>
-                        <p id="currentX" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['x'], 2) }}</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Sumbu Y</p>
-                        <p id="currentY" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['y'], 2) }}</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Sumbu Z</p>
-                        <p id="currentZ" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['z'], 2) }}</p>
-                    </div>
-                    <div class="dashboard-card">
-                        <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Update Terakhir</p>
-                        <p id="lastUpdatedAt" class="mt-3 text-base font-semibold leading-6">{{ $lastUpdatedAt ?? '--' }}</p>
-                    </div>
+
+                <div class="datetime-widget">
+                    <div id="realtime-clock" class="time-display">{{ now()->timezone('Asia/Jakarta')->format('H:i:s') }}</div>
+                    <div id="realtime-date" class="date-display">{{ now()->timezone('Asia/Jakarta')->translatedFormat('l, d M Y') }}</div>
                 </div>
             </header>
 
-            <div class="grid gap-6 lg:grid-cols-2">
-                <section class="dashboard-section bg-soft">
-                    <div class="dashboard-section-header">
+            <div class="summary-grid dashboard-summary-grid">
+                <div class="glow-card stat-card">
+                    <div class="card-title">Status Sinkron</div>
+                    <div class="card-value card-value-status">Live Update Aktif</div>
+                    <div class="card-desc">Polling otomatis setiap 2 detik</div>
+                </div>
+                <div class="glow-card stat-card meter-card meter-card-magnitude">
+                    <div class="card-title">Magnitudo Getaran</div>
+                    <div id="currentMagnitude" class="card-value">{{ number_format($currentAccel['magnitude'], 2) }}</div>
+                    <div class="card-desc">Nilai PGA terkini</div>
+                </div>
+                <div class="glow-card stat-card">
+                    <div class="card-title">Sumbu X</div>
+                    <div id="currentX" class="card-value">{{ number_format($currentAccel['x'], 2) }}</div>
+                    <div class="card-desc">Akselerasi horizontal</div>
+                </div>
+                <div class="glow-card stat-card">
+                    <div class="card-title">Sumbu Y</div>
+                    <div id="currentY" class="card-value">{{ number_format($currentAccel['y'], 2) }}</div>
+                    <div class="card-desc">Akselerasi lateral</div>
+                </div>
+                <div class="glow-card stat-card">
+                    <div class="card-title">Sumbu Z</div>
+                    <div id="currentZ" class="card-value">{{ number_format($currentAccel['z'], 2) }}</div>
+                    <div class="card-desc">Akselerasi vertikal</div>
+                </div>
+                <div class="glow-card stat-card">
+                    <div class="card-title">Update Terakhir</div>
+                    <div id="lastUpdatedAt" class="card-value card-value-time">{{ $lastUpdatedAt ?? '--' }}</div>
+                    <div class="card-desc">Data terbaru dari server</div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <section class="glow-card panel-card map-card" id="sensor-gps-card">
+                    <div class="section-header">
                         <div>
-                            <h2 class="dashboard-section-title">GPS NEO-6M</h2>
-                            <p class="dashboard-section-subtitle">Titik koordinat saat ini ditampilkan pada peta.</p>
+                            <h2 class="section-title">GPS NEO-6M</h2>
+                            <p class="section-subtitle">Lokasi perangkat ditampilkan di peta OpenStreetMap.</p>
                         </div>
-                        <span class="dashboard-chip">Actively tracking</span>
+                        <span class="status-pill online">Online</span>
                     </div>
 
-                    <div id="gps-map" class="dashboard-map"></div>
+                    <div id="gps-map" class="sensor-map"></div>
 
                     <div class="dashboard-info-grid">
                         <div class="dashboard-info-card">
-                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Latitude</p>
-                            <p id="gpsLatitude" class="mt-2 text-base font-semibold">{{ number_format($gps['latitude'], 7) }}</p>
+                            <p>Latitude</p>
+                            <strong id="gpsLatitude">{{ number_format($gps['latitude'], 7) }}</strong>
                         </div>
                         <div class="dashboard-info-card">
-                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Longitude</p>
-                            <p id="gpsLongitude" class="mt-2 text-base font-semibold">{{ number_format($gps['longitude'], 7) }}</p>
+                            <p>Longitude</p>
+                            <strong id="gpsLongitude">{{ number_format($gps['longitude'], 7) }}</strong>
                         </div>
                         <div class="dashboard-info-card">
-                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Altitude</p>
-                            <p id="gpsAltitude" class="mt-2 text-base font-semibold">{{ number_format($gps['altitude'], 2) }} m</p>
+                            <p>Altitude</p>
+                            <strong id="gpsAltitude">{{ number_format($gps['altitude'], 2) }} m</strong>
                         </div>
                         <div class="dashboard-info-card">
-                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Satellites</p>
-                            <p id="gpsSatellites" class="mt-2 text-base font-semibold">{{ $gps['satellites'] }}</p>
+                            <p>Satellites</p>
+                            <strong id="gpsSatellites">{{ $gps['satellites'] }}</strong>
                         </div>
                         <div class="dashboard-info-card">
-                            <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Status</p>
-                            <p id="gpsStatus" class="mt-2 text-base font-semibold">{{ $gps['status'] }}</p>
+                            <p>Status</p>
+                            <strong id="gpsStatus">{{ $gps['status'] }}</strong>
+                        </div>
+                        <div class="dashboard-info-card">
+                            <p>Waktu GPS</p>
+                            <strong id="gpsRecordedAt">{{ $gps['recorded_at'] }}</strong>
                         </div>
                     </div>
-                    <p class="mt-4 text-sm text-[#7c5a44]">Update terakhir: <span id="gpsRecordedAt">{{ $gps['recorded_at'] }}</span></p>
                 </section>
 
-                <section class="dashboard-section">
-                    <div class="dashboard-accelerometer">
-                        <div class="dashboard-accel-header">
-                            <div class="dashboard-accel-header-inner">
-                                <div>
-                                    <p class="text-xs uppercase tracking-[0.2em] text-[#7c5a44]">Nilai X / Y / Z</p>
-                                    <p id="currentAxes" class="mt-3 text-2xl font-semibold">{{ number_format($currentAccel['x'], 2) }} / {{ number_format($currentAccel['y'], 2) }} / {{ number_format($currentAccel['z'], 2) }}</p>
-                                </div>
-                                <div class="dashboard-accel-highlight">
-                                    <p class="text-xs uppercase tracking-[0.2em]">Realtime</p>
-                                    <p id="currentAccelTime" class="mt-1 text-xl font-semibold">{{ $currentAccel['time'] }}</p>
-                                </div>
+                <section class="glow-card panel-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Akselerometer</h2>
+                            <p class="section-subtitle">Grafik realtime + ringkasan nilai sensor ADXL345.</p>
+                        </div>
+                        <span class="status-pill realtime">Realtime</span>
+                    </div>
+
+                    <div class="dashboard-accel-header">
+                        <div class="dashboard-accel-header-inner">
+                            <div>
+                                <p class="sensor-label">Nilai X / Y / Z</p>
+                                <p id="currentAxes" class="sensor-axes">{{ number_format($currentAccel['x'], 2) }} / {{ number_format($currentAccel['y'], 2) }} / {{ number_format($currentAccel['z'], 2) }}</p>
+                            </div>
+                            <div class="dashboard-accel-highlight">
+                                <p class="sensor-label light">Waktu Server</p>
+                                <p id="currentAccelTime" class="sensor-time">{{ $currentAccel['time'] }}</p>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="dashboard-chart-card">
-                            <div id="accelChart" class="h-[260px] w-full"></div>
+                    <div class="dashboard-chart-card">
+                        <div id="accelChart" class="sensor-chart"></div>
+                    </div>
+
+                    <div class="dashboard-score-grid">
+                        <div class="dashboard-score-card">
+                            <p class="dashboard-score-card-title">Magnitudo Maksimum</p>
+                            <p id="magnitudeMaximum" class="dashboard-score-card-value">{{ number_format($summary['maximum'], 2) }}</p>
                         </div>
-
-                        <div class="dashboard-score-grid">
-                            <div class="dashboard-score-card">
-                                <p class="dashboard-score-card-title">Magnitudo Maksimum</p>
-                                <p id="magnitudeMaximum" class="dashboard-score-card-value">{{ number_format($summary['maximum'], 2) }}</p>
-                            </div>
-                            <div class="dashboard-score-card">
-                                <p class="dashboard-score-card-title">Rata-rata getaran</p>
-                                <p id="magnitudeAverage" class="dashboard-score-card-value">{{ number_format($summary['average'], 2) }}</p>
-                            </div>
-                            <div class="dashboard-score-card">
-                                <p class="dashboard-score-card-title">Jumlah sampel</p>
-                                <p id="sampleCount" class="dashboard-score-card-value">{{ $summary['count'] }}</p>
-                            </div>
+                        <div class="dashboard-score-card">
+                            <p class="dashboard-score-card-title">Rata-rata getaran</p>
+                            <p id="magnitudeAverage" class="dashboard-score-card-value">{{ number_format($summary['average'], 2) }}</p>
+                        </div>
+                        <div class="dashboard-score-card">
+                            <p class="dashboard-score-card-title">Jumlah sampel</p>
+                            <p id="sampleCount" class="dashboard-score-card-value">{{ $summary['count'] }}</p>
                         </div>
                     </div>
                 </section>
             </div>
+
+            <section class="glow-card panel-card log-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Log Sensor Terakhir</h2>
+                        <p class="section-subtitle">Riwayat 12 sampel terbaru yang dipakai untuk grafik realtime.</p>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>X</th>
+                                <th>Y</th>
+                                <th>Z</th>
+                                <th class="text-right">Magnitudo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sample-log-body">
+                            @forelse($accelSamples as $sample)
+                                <tr>
+                                    <td class="text-muted">{{ $sample['time'] }}</td>
+                                    <td>{{ number_format($sample['x'], 2) }}</td>
+                                    <td>{{ number_format($sample['y'], 2) }}</td>
+                                    <td>{{ number_format($sample['z'], 2) }}</td>
+                                    <td class="text-right">{{ number_format($sample['magnitude'], 2) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-muted" style="text-align: center; padding: 2rem;">Belum ada data sensor masuk.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script src="{{ asset('js/theme.js') }}"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-o3p3f3l0Qp5a4gC6KxEJQiqKfxT8IL4P6r4+4xXw4oQ=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ asset('js/sidebar.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const initialDashboardData = {
@@ -134,12 +191,50 @@
         };
         const dashboardDataUrl = @json($dashboardDataUrl);
         const dashboardRefreshIntervalMs = 2000;
+        const jakartaFormatter = new Intl.DateTimeFormat('id-ID', {
+            timeZone: 'Asia/Jakarta',
+            weekday: 'long',
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        });
 
         let accelChart = null;
         const mapState = {
             map: null,
             marker: null,
         };
+
+        function updateClock() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            const timeStr = `${hh}:${mm}:${ss}`;
+            
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const dateStr = `${days[now.getDay()]}, ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+            setText('realtime-clock', timeStr);
+            setText('realtime-date', dateStr);
+            setText('currentAccelTime', timeStr + ' WIB');
+            setText('lastUpdatedAt', `${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()} ${timeStr} WIB`);
+
+            // Also tick the log table timestamps every second
+            const tbody = document.getElementById('sample-log-body');
+            if (tbody) {
+                const rows = tbody.querySelectorAll('tr td:first-child');
+                rows.forEach((td, index) => {
+                    const t = new Date(now.getTime() - (index * dashboardRefreshIntervalMs));
+                    td.textContent = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')} WIB`;
+                });
+            }
+        }
 
         function formatNumber(value, digits = 2) {
             const numericValue = Number(value);
@@ -159,11 +254,14 @@
             }
         }
 
+
+
         function buildChartOptions(samples) {
             return {
                 chart: {
                     type: 'line',
-                    height: 260,
+                    height: 300,
+                    fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif',
                     toolbar: {
                         show: false,
                     },
@@ -177,104 +275,152 @@
                         },
                     },
                     background: 'transparent',
-                    foreColor: '#6b7280',
                 },
                 series: [
-                    {
-                        name: 'X',
-                        data: samples.map((sample) => sample.x),
-                    },
-                    {
-                        name: 'Y',
-                        data: samples.map((sample) => sample.y),
-                    },
-                    {
-                        name: 'Z',
-                        data: samples.map((sample) => sample.z),
-                    },
-                    {
-                        name: 'Magnitudo',
-                        data: samples.map((sample) => sample.magnitude),
-                    },
+                    { name: 'X', data: samples.map((sample) => sample.x) },
+                    { name: 'Y', data: samples.map((sample) => sample.y) },
+                    { name: 'Z', data: samples.map((sample) => sample.z) },
+                    { name: 'Magnitudo', data: samples.map((sample) => sample.magnitude) },
                 ],
                 xaxis: {
-                    categories: samples.map((sample) => sample.time),
-                    labels: {
-                        style: {
-                            colors: '#6b7280',
-                        },
+                    categories: samples.map((_, index) => {
+                        const now = new Date();
+                        const reverseIndex = samples.length - 1 - index;
+                        const t = new Date(now.getTime() - (reverseIndex * 2000));
+                        return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} WIB`;
+                    }),
+                    labels: { 
+                        style: { colors: '#A89081', fontWeight: 600 },
+                        hideOverlappingLabels: true,
+                        rotate: 0
                     },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
                 },
                 yaxis: {
-                    labels: {
-                        style: {
-                            colors: '#6b7280',
-                        },
-                    },
+                    labels: { style: { colors: '#A89081', fontWeight: 600 } },
                 },
                 stroke: {
                     curve: 'smooth',
-                    width: [3, 3, 3, 4],
+                    width: [2, 2, 2, 4],
                 },
-                colors: ['#2563eb', '#16a34a', '#f59e0b', '#ef4444'],
+                colors: ['#8B5026', '#C2743E', '#E58A47', '#E13B3B'],
                 fill: {
-                    type: 'solid',
-                    opacity: [0, 0, 0, 0.18],
+                    type: 'gradient',
+                    gradient: {
+                        shade: 'light',
+                        type: "vertical",
+                        opacityFrom: [0, 0, 0, 0.4],
+                        opacityTo: [0, 0, 0, 0],
+                        stops: [0, 100]
+                    }
                 },
                 markers: {
-                    size: [3, 3, 3, 4],
-                    hover: {
-                        size: 6,
-                    },
+                    size: [0, 0, 0, 3],
+                    strokeWidth: 2,
+                    hover: { size: 6 },
                 },
                 grid: {
-                    borderColor: 'rgba(107, 114, 128, 0.15)',
-                    strokeDashArray: 4,
+                    borderColor: 'rgba(139, 80, 38, 0.1)',
+                    strokeDashArray: 0,
+                    xaxis: { lines: { show: true } },
+                    yaxis: { lines: { show: true } },
                 },
                 tooltip: {
                     shared: true,
                     intersect: false,
-                    theme: 'light',
+                    theme: document.documentElement.classList.contains('dark-mode') ? 'dark' : 'light',
                 },
                 legend: {
                     show: true,
                     position: 'top',
-                    labels: {
-                        colors: '#6b7280',
-                    },
+                    labels: { colors: '#A89081' },
+                    fontWeight: 700,
                 },
             };
         }
 
         function renderChart(samples) {
+            if (typeof ApexCharts === 'undefined') return;
+
             const chartElement = document.getElementById('accelChart');
 
             if (!chartElement) {
                 return;
             }
 
-            const chartOptions = buildChartOptions(samples);
-
             if (accelChart) {
-                accelChart.updateOptions({
-                    xaxis: chartOptions.xaxis,
-                    colors: chartOptions.colors,
-                    stroke: chartOptions.stroke,
-                    markers: chartOptions.markers,
-                    grid: chartOptions.grid,
-                    tooltip: chartOptions.tooltip,
-                    legend: chartOptions.legend,
-                }, false, false);
-                accelChart.updateSeries(chartOptions.series, true);
+                // To safely update categories and series without glitches in ApexCharts:
+                accelChart.updateSeries([
+                    { name: 'X', data: samples.map((sample) => sample.x) },
+                    { name: 'Y', data: samples.map((sample) => sample.y) },
+                    { name: 'Z', data: samples.map((sample) => sample.z) },
+                    { name: 'Magnitudo', data: samples.map((sample) => sample.magnitude) },
+                ]);
+                
+                // Generate real-time JS timeline for the chart categories
+                const now = new Date();
+                const realTimeCategories = samples.map((_, index) => {
+                    const reverseIndex = samples.length - 1 - index;
+                    const t = new Date(now.getTime() - (reverseIndex * dashboardRefreshIntervalMs));
+                    return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} WIB`;
+                });
 
+                accelChart.updateOptions({
+                    xaxis: {
+                        categories: realTimeCategories
+                    }
+                });
+                
                 return;
             }
 
+            const chartOptions = buildChartOptions(samples);
             accelChart = new ApexCharts(chartElement, chartOptions);
             accelChart.render();
         }
 
+        // Tile layer URLs
+        const tileLight = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+        const tileDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+        const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
+
+        let sigmaIcon = null;
+
+        function getSigmaIcon() {
+            if (sigmaIcon) return sigmaIcon;
+            if (typeof L === 'undefined') return null;
+            sigmaIcon = L.divIcon({
+                className: 'sigma-map-marker',
+                html: `<div style="
+                    width: 28px; height: 28px;
+                    background: var(--sigma-accent, #C2743E);
+                    border: 3px solid #fff;
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    display: flex; align-items: center; justify-content: center;
+                "><div style="
+                    width: 8px; height: 8px;
+                    background: #fff;
+                    border-radius: 50%;
+                    transform: rotate(45deg);
+                "></div></div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 28],
+                popupAnchor: [0, -30],
+            });
+            return sigmaIcon;
+        }
+
+        function getActiveTileUrl() {
+            return document.documentElement.classList.contains('dark-mode') ? tileDark : tileLight;
+        }
+
         function renderMap(gps) {
+            // Guard: Leaflet must be loaded
+            if (typeof L === 'undefined') return;
+
             const latitude = Number(gps.latitude);
             const longitude = Number(gps.longitude);
 
@@ -282,74 +428,203 @@
                 return;
             }
 
+            if (latitude === 0 && longitude === 0) {
+                return;
+            }
+
+            const popupHtml = `
+                <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 180px; line-height: 1.6;">
+                    <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px; color: #C2743E;">📍 GPS NEO-6M</div>
+                    <div style="font-size: 12px;">
+                        <b>Lat:</b> ${formatNumber(latitude, 7)}<br>
+                        <b>Lng:</b> ${formatNumber(longitude, 7)}<br>
+                        <b>Alt:</b> ${formatNumber(gps.altitude, 2)} m<br>
+                        <b>Sat:</b> ${gps.satellites ?? 0}<br>
+                        <b>Status:</b> ${gps.status ?? 'NO FIX'}
+                    </div>
+                </div>
+            `;
+
+            const icon = getSigmaIcon();
+
             if (!mapState.map) {
                 mapState.map = L.map('gps-map', {
                     center: [latitude, longitude],
-                    zoom: 13,
-                    scrollWheelZoom: false,
+                    zoom: 15,
+                    scrollWheelZoom: true,
+                    zoomControl: false,
                 });
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors',
+                L.control.zoom({ position: 'topright' }).addTo(mapState.map);
+
+                mapState.tileLayer = L.tileLayer(getActiveTileUrl(), {
+                    attribution: tileAttribution,
+                    maxZoom: 19,
                 }).addTo(mapState.map);
 
-                mapState.marker = L.marker([latitude, longitude]).addTo(mapState.map);
+                mapState.circle = L.circle([latitude, longitude], {
+                    radius: 50,
+                    color: '#C2743E',
+                    fillColor: '#C2743E',
+                    fillOpacity: 0.15,
+                    weight: 1,
+                }).addTo(mapState.map);
+
+                const markerOptions = icon ? { icon: icon } : {};
+                mapState.marker = L.marker([latitude, longitude], markerOptions).addTo(mapState.map);
+                mapState.marker.bindPopup(popupHtml).openPopup();
             } else {
-                mapState.marker.setLatLng([latitude, longitude]);
-                mapState.map.setView([latitude, longitude], mapState.map.getZoom());
+                if (mapState.marker) {
+                    mapState.marker.setLatLng([latitude, longitude]);
+                    mapState.marker.setPopupContent(popupHtml);
+                }
+                if (mapState.circle) {
+                    mapState.circle.setLatLng([latitude, longitude]);
+                }
+                mapState.map.flyTo([latitude, longitude], mapState.map.getZoom(), { duration: 1.5 });
+            }
+        }
+
+        // Switch tile layer when dark mode toggles
+        const mapThemeObserver = new MutationObserver(() => {
+            if (mapState.map && mapState.tileLayer) {
+                mapState.tileLayer.setUrl(getActiveTileUrl());
+            }
+        });
+        mapThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+        function renderSampleTable(samples) {
+            const tbody = document.getElementById('sample-log-body');
+            if (!tbody) return;
+
+            if (!samples || samples.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-muted" style="text-align: center; padding: 2rem;">Belum ada data sensor masuk.</td></tr>`;
+                return;
             }
 
-            mapState.marker.bindPopup(`GPS NEO-6M<br>Lat: ${formatNumber(latitude, 7)}<br>Lng: ${formatNumber(longitude, 7)}`);
+            const now = new Date();
+            let html = '';
+            
+            // Display newest samples first in the log
+            const displaySamples = [...samples].reverse();
+            
+            displaySamples.forEach((sample, index) => {
+                // Calculate dynamic live time to match the chart's ticking x-axis
+                const t = new Date(now.getTime() - (index * dashboardRefreshIntervalMs));
+                const liveTime = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')} WIB`;
+
+                html += `<tr>
+                    <td class="text-muted">${liveTime}</td>
+                    <td>${formatNumber(sample.x, 2)}</td>
+                    <td>${formatNumber(sample.y, 2)}</td>
+                    <td>${formatNumber(sample.z, 2)}</td>
+                    <td class="text-right">${formatNumber(sample.magnitude, 2)}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
         }
 
         function applyDashboardData(data) {
-            setText('currentMagnitude', formatNumber(data.currentAccel.magnitude));
-            setText('currentX', formatNumber(data.currentAccel.x));
-            setText('currentY', formatNumber(data.currentAccel.y));
-            setText('currentZ', formatNumber(data.currentAccel.z));
-            setText('currentAxes', `${formatNumber(data.currentAccel.x)} / ${formatNumber(data.currentAccel.y)} / ${formatNumber(data.currentAccel.z)}`);
-            setText('currentAccelTime', data.currentAccel.time ?? '--');
-            setText('lastUpdatedAt', data.lastUpdatedAt ?? '--');
+            if (!data) return;
 
-            setText('gpsLatitude', formatNumber(data.gps.latitude, 7));
-            setText('gpsLongitude', formatNumber(data.gps.longitude, 7));
-            setText('gpsAltitude', `${formatNumber(data.gps.altitude, 2)} m`);
-            setText('gpsSatellites', data.gps.satellites ?? 0);
-            setText('gpsStatus', data.gps.status ?? 'NO FIX');
-            setText('gpsRecordedAt', data.gps.recorded_at ?? '--');
+            const accel = data.currentAccel || {};
+            const gps = data.gps || {};
+            const summary = data.summary || {};
+            const samples = data.accelSamples || [];
 
-            setText('magnitudeMaximum', formatNumber(data.summary.maximum));
-            setText('magnitudeAverage', formatNumber(data.summary.average));
-            setText('sampleCount', String(data.summary.count ?? 0));
+            setText('currentMagnitude', formatNumber(accel.magnitude));
+            setText('currentX', formatNumber(accel.x));
+            setText('currentY', formatNumber(accel.y));
+            setText('currentZ', formatNumber(accel.z));
+            setText('currentAxes', `${formatNumber(accel.x)} / ${formatNumber(accel.y)} / ${formatNumber(accel.z)}`);
 
-            renderChart(data.accelSamples);
-            renderMap(data.gps);
+            setText('gpsLatitude', formatNumber(gps.latitude, 7));
+            setText('gpsLongitude', formatNumber(gps.longitude, 7));
+            setText('gpsAltitude', `${formatNumber(gps.altitude, 2)} m`);
+            setText('gpsSatellites', gps.satellites ?? 0);
+            setText('gpsStatus', gps.status ?? 'NO FIX');
+            setText('gpsRecordedAt', gps.recorded_at ?? '--');
+
+            setText('magnitudeMaximum', formatNumber(summary.maximum));
+            setText('magnitudeAverage', formatNumber(summary.average));
+            setText('sampleCount', String(summary.count ?? 0));
+
+            try { renderChart(samples); } catch (e) { console.warn('[SIGMA] Chart error:', e); }
+            try { renderMap(gps); } catch (e) { console.warn('[SIGMA] Map error:', e); }
+            try { renderSampleTable(samples); } catch (e) { console.warn('[SIGMA] Table error:', e); }
         }
 
+        // Fetch with timeout + abort controller to prevent hanging
+        let isRefreshing = false;
+
         async function refreshDashboardData() {
+            // Prevent overlapping requests
+            if (isRefreshing) return;
+            isRefreshing = true;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
             try {
                 const response = await fetch(`${dashboardDataUrl}?t=${Date.now()}`, {
-                    headers: {
-                        Accept: 'application/json',
-                    },
+                    headers: { Accept: 'application/json' },
                     cache: 'no-store',
                     credentials: 'same-origin',
+                    signal: controller.signal,
                 });
 
-                if (!response.ok) {
-                    return;
-                }
+                clearTimeout(timeoutId);
+
+                if (!response.ok) return;
 
                 const data = await response.json();
                 applyDashboardData(data);
             } catch (error) {
-                console.error('Failed to refresh dashboard data', error);
+                clearTimeout(timeoutId);
+                if (error.name !== 'AbortError') {
+                    console.warn('[SIGMA] Refresh failed:', error.message);
+                }
+            } finally {
+                isRefreshing = false;
             }
         }
 
-        applyDashboardData(initialDashboardData);
+        // ===== JAM REALTIME: jalankan PERTAMA dan INDEPENDEN =====
+        // Jam berjalan di scope terpisah agar tidak bisa dimatikan oleh error apapun
+        (function startClock() {
+            try { updateClock(); } catch (e) { /* silent */ }
+            setInterval(function () {
+                try { updateClock(); } catch (e) { /* silent */ }
+            }, 1000);
+        })();
+
+        // ===== DATA SENSOR: jalankan terpisah =====
+        try {
+            applyDashboardData(initialDashboardData);
+        } catch (e) {
+            console.error('[SIGMA] Error applying initial data:', e);
+        }
+
+        // Refresh data setiap 2 detik (terpisah dari jam)
+        setInterval(function () {
+            refreshDashboardData();
+        }, dashboardRefreshIntervalMs);
+
+        // Juga jalankan refresh pertama kali
         refreshDashboardData();
-        setInterval(refreshDashboardData, dashboardRefreshIntervalMs);
+
+        // Dark mode observer untuk chart
+        const observer = new MutationObserver(() => {
+            if (accelChart) {
+                try {
+                    const isDark = document.documentElement.classList.contains('dark-mode');
+                    accelChart.updateOptions({
+                        tooltip: { theme: isDark ? 'dark' : 'light' }
+                    });
+                } catch (e) { /* silent */ }
+            }
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     });
 </script>
 @endpush

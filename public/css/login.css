@@ -1,5 +1,29 @@
 :root {
-    color-scheme: light;
+    --sigma-radius-card: 6px;
+    --sigma-radius-btn: 4px;
+    --sigma-radius-pill: 99px;
+    --sigma-bg: #FAF5F0;
+    --sigma-surface: #FFFFFF;
+    --sigma-surface-2: #F5EFEB;
+    --sigma-border: #E8DCCB;
+    --sigma-text: #3D2616;
+    --sigma-muted: #826451;
+    --sigma-accent: #C2743E;
+    --sigma-accent-2: #8B5026;
+    --sigma-warm: #6B3C1B;
+}
+
+html.dark-mode {
+    color-scheme: dark;
+    --sigma-bg: #1A110C;
+    --sigma-surface: #261A13;
+    --sigma-surface-2: #33231A;
+    --sigma-border: #4D3527;
+    --sigma-text: #F5EAE1;
+    --sigma-muted: #B39B8A;
+    --sigma-accent: #E58A47;
+    --sigma-accent-2: #FFAA73;
+    --sigma-warm: #C2743E;
 }
 
 .auth-page {
@@ -8,7 +32,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #a9754f 0%, #c69b7b 50%, #f8ede3 100%);
+    background: var(--sigma-surface);
     color: #37261b;
     overflow: hidden;
 }
@@ -42,7 +66,7 @@
     top: 1.5rem;
     right: 1.5rem;
     z-index: 9999;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--sigma-surface-2);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.8);
     cursor: pointer;
@@ -51,15 +75,15 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.75rem;
+    border-radius: var(--sigma-radius-btn);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 20px rgba(49, 33, 24, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .theme-toggle-btn:hover {
     background: rgba(255, 255, 255, 1);
     transform: scale(1.05);
-    box-shadow: 0 12px 24px rgba(49, 33, 24, 0.15);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .theme-toggle-btn:active {
@@ -67,22 +91,22 @@
 }
 
 html.dark-mode .theme-toggle-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--sigma-surface-2);
     border-color: rgba(255, 255, 255, 0.3);
     color: #f8ede3;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 html.dark-mode .theme-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    background: var(--sigma-surface-2);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .auth-card {
     width: min(100%, 440px);
     background: #ffffff;
-    border-radius: 1.75rem;
-    box-shadow: 0 32px 64px rgba(74, 46, 11, 0.22), 0 16px 32px rgba(74, 46, 11, 0.15);
+    border-radius: var(--sigma-radius-card);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     padding: 2.5rem;
     position: relative;
     z-index: 10;
@@ -129,9 +153,9 @@ html.dark-mode .theme-toggle-btn:hover {
     width: 100%;
     padding: 0.9rem 1.1rem;
     border: 1.5px solid #d6c4b0;
-    border-radius: 0.85rem;
+    border-radius: var(--sigma-radius-btn);
     background: #faf8f5;
-    box-shadow: inset 0 2px 4px rgba(45, 36, 29, 0.05), 0 1px 2px rgba(45, 36, 29, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.95rem;
     color: #37261b;
@@ -145,7 +169,7 @@ html.dark-mode .theme-toggle-btn:hover {
     outline: none;
     border-color: #7c4c2e;
     background: #ffffff;
-    box-shadow: inset 0 2px 4px rgba(45, 36, 29, 0.05), 0 0 0 4px rgba(124, 76, 46, 0.15), 0 8px 16px rgba(124, 76, 46, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
 }
 
@@ -175,7 +199,7 @@ html.dark-mode .theme-toggle-btn:hover {
     height: 1.1rem;
     accent-color: #7c4c2e;
     cursor: pointer;
-    border-radius: 0.25rem;
+    border-radius: var(--sigma-radius-btn);
 }
 
 .auth-button {
@@ -184,14 +208,14 @@ html.dark-mode .theme-toggle-btn:hover {
     justify-content: center;
     align-items: center;
     padding: 1rem 1.2rem;
-    border-radius: 0.85rem;
+    border-radius: var(--sigma-radius-btn);
     border: none;
-    background: linear-gradient(135deg, #7c4c2e 0%, #6b3f25 100%);
+    background: var(--sigma-surface);
     color: #ffffff;
     font-weight: 700;
     font-size: 0.95rem;
     letter-spacing: 0.3px;
-    box-shadow: 0 16px 40px rgba(124, 76, 46, 0.25), 0 8px 20px rgba(124, 76, 46, 0.15);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -211,8 +235,8 @@ html.dark-mode .theme-toggle-btn:hover {
 
 .auth-button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 50px rgba(124, 76, 46, 0.3), 0 12px 24px rgba(124, 76, 46, 0.2);
-    background: linear-gradient(135deg, #8d5635 0%, #7c4c2e 100%);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    background: var(--sigma-surface);
 }
 
 .auth-button:hover::before {
@@ -221,7 +245,7 @@ html.dark-mode .theme-toggle-btn:hover {
 
 .auth-button:active {
     transform: translateY(0);
-    box-shadow: 0 12px 30px rgba(124, 76, 46, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .auth-button:disabled {
@@ -270,252 +294,3 @@ html.dark-mode .theme-toggle-btn:hover {
     padding-top: 1.5rem;
 }
 
-/* Dark Mode Styles */
-html.dark-mode {
-    color-scheme: dark;
-}
-
-html.dark-mode .auth-page {
-    background: linear-gradient(135deg, #3d2817 0%, #4a341f 50%, #2d2219 100%);
-    color: #e8dfd5;
-}
-
-html.dark-mode .auth-card {
-    background: #332817;
-    box-shadow: 0 32px 64px rgba(0, 0, 0, 0.5), 0 16px 32px rgba(0, 0, 0, 0.35);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-html.dark-mode .auth-title {
-    color: #f8ede3;
-}
-
-html.dark-mode .auth-subtitle {
-    color: #c4b5a8;
-}
-
-html.dark-mode .auth-label {
-    color: #d4a882;
-}
-
-html.dark-mode .auth-input {
-    background: #2d2219;
-    border-color: #4a3d33;
-    color: #e8dfd5;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-html.dark-mode .auth-input::placeholder {
-    color: #8a7b6f;
-}
-
-html.dark-mode .auth-input:focus {
-    background: #3d3228;
-    border-color: #d4a574;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 4px rgba(212, 165, 116, 0.15), 0 8px 16px rgba(212, 165, 116, 0.1);
-}
-
-html.dark-mode .auth-error {
-    color: #ff7b5c;
-}
-
-html.dark-mode .auth-checkbox-label {
-    color: #e8dfd5;
-}
-
-html.dark-mode .auth-checkbox-label:hover {
-    color: #d4a574;
-}
-
-html.dark-mode .auth-footer {
-    color: #c4b5a8;
-    border-top-color: #4a3d33;
-}
-
-html.dark-mode .auth-footer a {
-    color: #d4a574;
-}
-
-html.dark-mode .auth-note {
-    color: #a89f95;
-}
-    text-align: center;
-    color: #5d4331;
-    font-size: 0.875rem;
-}
-
-/* Dark Mode Styles */
-html.dark-mode {
-    color-scheme: dark;
-}
-
-html.dark-mode .auth-page {
-    background: linear-gradient(135deg, #3d2817 0%, #4a341f 50%, #2d2219 100%);
-    color: #e8dfd5;
-}
-
-html.dark-mode .auth-card {
-    background: #282018;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.44);
-}
-
-html.dark-mode .auth-title {
-    color: #e8dfd5;
-}
-
-html.dark-mode .auth-subtitle {
-    color: #a89f95;
-}
-
-html.dark-mode .auth-label {
-    color: #c9a88e;
-}
-
-html.dark-mode .auth-input {
-    background: #1f1915;
-    border: 1px solid #3d2f26;
-    color: #e8dfd5;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.36);
-}
-
-html.dark-mode .auth-input::placeholder {
-    color: #7b6f65;
-}
-
-html.dark-mode .auth-input:focus {
-    border-color: #d4a574;
-    box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.18);
-}
-
-html.dark-mode .auth-error {
-    color: #d4a574;
-}
-
-html.dark-mode .auth-checkbox-label {
-    color: #e8dfd5;
-}
-
-html.dark-mode .auth-button {
-    background: #7c4c2e;
-    box-shadow: 0 12px 30px rgba(124, 76, 46, 0.36);
-}
-
-html.dark-mode .auth-button:hover {
-    background: #a56d44;
-}
-
-html.dark-mode .auth-footer {
-    color: #a89f95;
-}
-
-html.dark-mode .auth-footer a {
-    color: #d4a574;
-}
-
-html.dark-mode .auth-footer a:hover {
-    color: #e8b884;
-}
-
-html.dark-mode .auth-note {
-    color: #a89f95;
-}
-
-/* Mobile Responsive Styles */
-@media (max-width: 768px) {
-    .auth-page {
-        padding: 1rem;
-        background: linear-gradient(135deg, #a9754f 0%, #c69b7b 50%, #f8ede3 100%);
-    }
-
-    .auth-card {
-        width: 100%;
-        padding: 1.5rem;
-        border-radius: 1rem;
-    }
-
-    .auth-title {
-        font-size: 1.5rem;
-    }
-
-    .auth-subtitle {
-        font-size: 0.875rem;
-    }
-
-    .auth-label {
-        font-size: 0.8rem;
-    }
-
-    .auth-input {
-        padding: 0.625rem 0.75rem;
-        font-size: 1rem;
-    }
-
-    .auth-button {
-        padding: 0.75rem 0.875rem;
-        font-size: 0.95rem;
-    }
-
-    .auth-footer {
-        font-size: 0.8rem;
-        margin-top: 1.5rem;
-    }
-
-    .auth-note {
-        font-size: 0.75rem;
-        margin-top: 1rem;
-    }
-
-    #theme-toggle-btn {
-        top: 1rem !important;
-        right: 1rem !important;
-        padding: 0.5rem !important;
-        z-index: 9999 !important;
-    }
-
-    #theme-toggle-btn svg {
-        width: 18px !important;
-        height: 18px !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .auth-card {
-        padding: 1.25rem;
-        border-radius: 0.75rem;
-    }
-
-    .auth-title {
-        font-size: 1.25rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .auth-subtitle {
-        font-size: 0.75rem;
-    }
-
-    .auth-form {
-        gap: 1rem;
-    }
-
-    .auth-checkbox-label {
-        font-size: 0.75rem;
-        gap: 0.375rem;
-    }
-
-    .auth-checkbox {
-        width: 0.875rem;
-        height: 0.875rem;
-    }
-
-    #theme-toggle-btn {
-        top: 0.75rem !important;
-        right: 0.75rem !important;
-        padding: 0.5rem !important;
-        z-index: 9999 !important;
-    }
-
-    #theme-toggle-btn svg {
-        width: 16px !important;
-        height: 16px !important;
-    }
-}

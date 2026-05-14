@@ -19,9 +19,9 @@ class GPSData extends Model
     ];
 
     protected $casts = [
-        'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7',
-        'altitude' => 'decimal:2',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'altitude' => 'float',
         'recorded_at' => 'datetime',
     ];
 }
