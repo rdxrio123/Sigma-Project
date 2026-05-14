@@ -20,7 +20,7 @@
                 </div>
             </header>
 
-            <div class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+            <div class="grid gap-6 lg:grid-cols-2">
                 <section class="dashboard-section bg-soft">
                     <div class="dashboard-section-header">
                         <div>
